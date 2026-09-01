@@ -1,0 +1,38 @@
+# Riskon OR workstation - runtime stack baked into the agent image.
+# Keep in sync with pyproject.toml [project.dependencies].
+
+# --- Data workbench -------------------------------------------------------
+# DuckDB is the canonical format: every input is converted to a table on the
+# way in, and nothing downstream reads a source file again.
+duckdb>=1.1
+pandas>=2.2
+numpy>=1.26,<3
+pyarrow>=16
+polars>=1.0
+python-dateutil>=2.9
+requests>=2.32
+openpyxl>=3.1
+
+# --- Optimisation / OR solvers -------------------------------------------
+ortools>=9.14,<10        # CP-SAT + MPSolver (SCIP, CBC, GLOP, HiGHS)
+pulp>=3.0                # quick prototyping, bundles CBC
+scipy>=1.13              # linprog / milp / nonlinear, HiGHS built in
+# NOTE: `highspy` must NOT be present. Its libhighs exports symbols that clash
+# with the HiGHS bundled inside libortools.so, and once it is imported pywraplp
+# and CP-SAT fail to load entirely. cvxpy depends on it, so the Dockerfile
+# uninstalls it explicitly after this file is installed. HiGHS remains
+# reachable via pywraplp.Solver.CreateSolver("HIGHS") and scipy.optimize.
+cvxpy>=1.5               # convex + quadratic (risk, diversification)
+Pyomo>=6.7               # algebraic modelling layer, alternate route
+gurobipy>=11             # size-limited pip licence (~2000 vars/constraints)
+networkx>=3.3            # flow / matching / graph sanity checks
+
+# --- Reporting ------------------------------------------------------------
+tabulate>=0.9
+matplotlib>=3.8
+rich>=13.7
+
+# --- Ergonomics -----------------------------------------------------------
+ipython>=8.24
+pytest>=8.2
+ruff>=0.5
