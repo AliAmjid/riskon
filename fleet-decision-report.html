@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Fleet Purchase — Decision Report</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+
+  :root {
+    --navy: #0d2a4a;
+    --navy-soft: #1c4470;
+    --amber: #c8860d;
+    --ink: #1a1d21;
+    --muted: #5b6673;
+    --rule: #d9dee5;
+    --bg-soft: #f4f6f9;
+    --green: #1f7a4d;
+    --red: #b03026;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body {
+    font-family: "Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 10.8pt;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  h1, h2, h3, h4, .sans { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; }
+  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; }
+
+  /* ---------- cover ---------- */
+  .cover { height: 248mm; display: flex; flex-direction: column;
+           justify-content: space-between; page-break-after: always; }
+  .cover-top { border-top: 6px solid var(--navy); padding-top: 11mm; }
+  .eyebrow { font-family: "Inter", Arial, sans-serif; text-transform: uppercase;
+             letter-spacing: .18em; font-size: 8pt; color: var(--amber); font-weight: 700; }
+  .cover h1 { font-size: 40pt; line-height: 1.04; margin: 7mm 0 0 0;
+              color: var(--navy); letter-spacing: -0.02em; }
+  .cover .sub { font-family: "Inter", Arial, sans-serif; font-size: 13pt;
+                color: var(--muted); margin-top: 5mm; font-weight: 400; line-height: 1.4; }
+  .cover-mid { margin-top: 14mm; }
+  .cover-foot { border-top: 1px solid var(--rule); padding-top: 5mm;
+                font-family: "Inter", Arial, sans-serif; font-size: 8.6pt; color: var(--muted);
+                display: flex; justify-content: space-between; }
+
+  .verdict { background: var(--navy); color: #fff; padding: 9mm 10mm; border-radius: 3px; }
+  .verdict .lbl { font-family: "Inter", Arial, sans-serif; text-transform: uppercase;
+                  letter-spacing: .16em; font-size: 8pt; color: #f0c46a; font-weight: 700; }
+  .verdict p { margin: 4mm 0 0 0; font-size: 13.5pt; line-height: 1.45; }
+  .verdict strong { color: #ffd98a; }
+
+  /* ---------- sections ---------- */
+  section { page-break-inside: auto; }
+  h2 { font-size: 17pt; color: var(--navy); margin: 0 0 5mm 0;
+       padding-bottom: 2.5mm; border-bottom: 2px solid var(--navy);
+       letter-spacing: -0.01em; page-break-after: avoid; }
+  h2 .num { display: inline-block; color: var(--amber); font-size: 11pt;
+            margin-right: 4mm; vertical-align: 2px; font-weight: 800; }
+  h3 { font-size: 11.5pt; color: var(--navy-soft); margin: 7mm 0 2.5mm 0;
+       page-break-after: avoid; }
+  p { margin: 0 0 3.5mm 0; }
+  .lead { font-size: 11.6pt; color: #2b3138; }
+
+  ul { margin: 0 0 4mm 0; padding-left: 5.5mm; }
+  li { margin-bottom: 2mm; }
+
+  /* ---------- number panel ---------- */
+  .kpis { display: flex; gap: 4mm; margin: 6mm 0; }
+  .kpi { flex: 1; background: var(--bg-soft); border-top: 3px solid var(--navy);
+         padding: 5mm 4mm; }
+  .kpi .v { font-family: "Inter", Arial, sans-serif; font-size: 19pt; font-weight: 700;
+            color: var(--navy); line-height: 1; letter-spacing: -0.02em; }
+  .kpi .k { font-family: "Inter", Arial, sans-serif; font-size: 8pt; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .1em; margin-top: 2.5mm; font-weight: 600; }
+  .kpi.good { border-top-color: var(--green); }
+  .kpi.good .v { color: var(--green); }
+  .kpi.warn { border-top-color: var(--red); }
+  .kpi.warn .v { color: var(--red); }
+
+  /* ---------- tables ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 4mm 0 5mm 0;
+          font-size: 9.6pt; page-break-inside: avoid; }
+  th { font-family: "Inter", Arial, sans-serif; font-size: 8pt; text-transform: uppercase;
+       letter-spacing: .09em; color: var(--muted); text-align: left; font-weight: 700;
+       border-bottom: 1.5px solid var(--navy); padding: 2.5mm 2mm; }
+  td { padding: 2.6mm 2mm; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { border-top: 1.5px solid var(--navy); border-bottom: none;
+                font-weight: 700; font-family: "Inter", Arial, sans-serif; font-size: 9.8pt;
+                color: var(--navy); }
+  .tag { font-family: "Inter", Arial, sans-serif; font-size: 7.4pt; font-weight: 700;
+         text-transform: uppercase; letter-spacing: .07em; padding: 0.7mm 2mm;
+         border-radius: 2px; background: var(--bg-soft); color: var(--muted); }
+  .tag.eu { background: #e8f0fa; color: var(--navy-soft); }
+
+  /* ---------- callouts ---------- */
+  .callout { border-left: 3px solid var(--amber); background: #fdf8ec;
+             padding: 4.5mm 5mm; margin: 5mm 0; page-break-inside: avoid; }
+  .callout.red { border-left-color: var(--red); background: #fdf1f0; }
+  .callout.green { border-left-color: var(--green); background: #eef7f2; }
+  .callout .lbl { display: block; font-family: "Inter", Arial, sans-serif; font-size: 8pt;
+                  font-weight: 800; text-transform: uppercase; letter-spacing: .12em;
+                  color: var(--amber); margin-bottom: 2.5mm; }
+  .callout.red .lbl { color: var(--red); }
+  .callout.green .lbl { color: var(--green); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .two { display: flex; gap: 6mm; }
+  .two > div { flex: 1; }
+
+  .compare { background: var(--bg-soft); padding: 5mm; margin: 5mm 0;
+             page-break-inside: avoid; }
+  .compare table { margin: 0; }
+  .compare td, .compare th { background: transparent; }
+
+  .footnote { font-size: 9pt; color: var(--muted); border-top: 1px solid var(--rule);
+              padding-top: 3mm; margin-top: 6mm; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <div>
+    <div class="cover-top">
+      <div class="eyebrow">Decision Report &nbsp;·&nbsp; Corporate Fleet Procurement</div>
+      <h1>Which vehicles<br />to buy, and why</h1>
+      <div class="sub">
+        A plain-language answer to the question:<br />
+        <em>&ldquo;How do I spend $1.55 million on a delivery fleet<br />
+        and get the most capability out of it?&rdquo;</em>
+      </div>
+    </div>
+
+    <div class="cover-mid">
+      <div class="verdict">
+        <span class="lbl">The short version</span>
+        <p>
+          We can buy you <strong>63 vehicles for $1,548,641</strong> with a combined
+          <strong>7,146 horsepower</strong> that meets your <strong>30 mpg</strong>
+          sustainability target — but only if you allow eleven of them to fall
+          <strong>four horsepower</strong> below your towing threshold.
+        </p>
+        <p style="font-size:11pt;opacity:.85;margin-top:5mm">
+          Hold that threshold firm and the 30 mpg target becomes impossible.
+          Not expensive — <em>impossible</em>. No budget fixes it.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-foot">
+    <div>Prepared for the Logistics Director &nbsp;·&nbsp; Non-technical summary</div>
+    <div>1 September 2026</div>
+  </div>
+</div>
+
+<!-- ================= 1. WHAT YOU ASKED ================= -->
+<section>
+<h2><span class="num">01</span>What you asked us for</h2>
+
+<p class="lead">
+You gave us six rules. Here they are as we understood them, in your own words, alongside
+what we did with each one.
+</p>
+
+<table>
+<thead><tr><th style="width:46%">What you said</th><th>How we handled it</th></tr></thead>
+<tbody>
+<tr><td>&ldquo;I've got about $1.55M&rdquo;</td>
+    <td>Treated as a hard ceiling. We never propose spending a dollar more.</td></tr>
+<tr><td>&ldquo;As much total engine power as possible&rdquo;</td>
+    <td>This became the goal. Everything else is a boundary; this is the thing we push as high as it will go.</td></tr>
+<tr><td>&ldquo;Every vehicle needs at least 100 hp for towing&rdquo;</td>
+    <td>Used as a filter. Vehicles under 100 hp were removed from consideration entirely — which turned out to be the pivotal decision in this whole report.</td></tr>
+<tr><td>&ldquo;At least 60 vehicles&rdquo;</td>
+    <td>Hard floor on fleet size.</td></tr>
+<tr><td>&ldquo;No more than a dozen of any one model&rdquo;</td>
+    <td>Cap of 12 units per model.</td></tr>
+<tr><td>&ldquo;Corporate wants the fleet to average at least 30 mpg&rdquo;</td>
+    <td>Treated as a <em>target</em> rather than an absolute rule, because you said &ldquo;wants&rdquo;. That reading matters — see section 3.</td></tr>
+<tr><td>&ldquo;Prefer European manufacturers if you can&rdquo;</td>
+    <td>Noted as a preference, not a rule. We could not enforce it strictly (see section 5), but our recommendation happens to include twelve European vehicles.</td></tr>
+</tbody>
+</table>
+
+<h3>What we searched</h3>
+<p>
+The vehicle catalogue contains 398 listings covering 301 distinct models. After removing
+listings with missing engine data and everything below your 100 hp towing threshold,
+<strong>132 models</strong> remained eligible. We then examined every possible combination of
+those 132 models — every mix, every quantity — and identified the single best one. This is not
+a sample or an estimate. It is the provably best answer available from this catalogue under
+your rules.
+</p>
+</section>
+
+<!-- ================= 2. THE ANSWER ================= -->
+<section class="pb">
+<h2><span class="num">02</span>Option A — your rules, exactly as written</h2>
+
+<p class="lead">
+If we hold every one of your rules firm, this is the best fleet money can buy.
+It is a good fleet. It misses your fuel-economy target by a hair.
+</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">60</div><div class="k">Vehicles</div></div>
+  <div class="kpi"><div class="v">6,804</div><div class="k">Total horsepower</div></div>
+  <div class="kpi"><div class="v">$1.54M</div><div class="k">Total spend</div></div>
+  <div class="kpi warn"><div class="v">29.8</div><div class="k">Avg mpg &nbsp;(target 30)</div></div>
+</div>
+
+<table>
+<thead>
+  <tr>
+    <th style="width:34%">Model</th>
+    <th class="n">Units</th><th class="n">HP each</th><th class="n">MPG</th>
+    <th class="n">Price each</th><th class="n">Subtotal</th><th>Origin</th>
+  </tr>
+</thead>
+<tbody>
+<tr><td>Datsun 280-ZX</td><td class="n">12</td><td class="n">132</td><td class="n">32.7</td><td class="n">$27,354</td><td class="n">$328,248</td><td><span class="tag">Japan</span></td></tr>
+<tr><td>Chevrolet Citation</td><td class="n">12</td><td class="n">115</td><td class="n">28.8</td><td class="n">$24,393</td><td class="n">$292,716</td><td><span class="tag">USA</span></td></tr>
+<tr><td>Oldsmobile Omega Brougham</td><td class="n">12</td><td class="n">115</td><td class="n">26.8</td><td class="n">$25,380</td><td class="n">$304,560</td><td><span class="tag">USA</span></td></tr>
+<tr><td>Dodge Colt</td><td class="n">12</td><td class="n">105</td><td class="n">27.9</td><td class="n">$26,320</td><td class="n">$315,840</td><td><span class="tag">USA</span></td></tr>
+<tr><td>Datsun 200SX</td><td class="n">12</td><td class="n">100</td><td class="n">32.9</td><td class="n">$24,581</td><td class="n">$294,972</td><td><span class="tag">Japan</span></td></tr>
+<tr class="total"><td>Total</td><td class="n">60</td><td class="n">6,804</td><td class="n">29.82</td><td class="n"></td><td class="n">$1,536,336</td><td></td></tr>
+</tbody>
+</table>
+
+<p>
+This leaves <strong>$13,664 unspent</strong>. That is not an oversight and it is not a rounding
+error — there is genuinely nothing left in the catalogue worth buying with it. Any additional
+vehicle you could afford would drag the fleet average below 29.8 mpg, and swapping in
+anything more powerful would push you over budget. The money has nowhere useful to go.
+</p>
+
+<div class="callout">
+<span class="lbl">Notice what is missing</span>
+<p>
+There are no European vehicles in this fleet. Under your rules as literally written, none of
+them earn a place. Section 4 shows how a very small concession changes that.
+</p>
+</div>
+</section>
+
+<!-- ================= 3. THE PROBLEM ================= -->
+<section>
+<h2><span class="num">03</span>The one rule we could not meet</h2>
+
+<p class="lead">
+Your 30 mpg fleet average cannot be achieved. We want to be precise about why, because
+the reason is not the one people usually assume.
+</p>
+
+<p>
+Once you require every vehicle to produce at least 100 horsepower, the most fuel-efficient
+vehicle left in the entire catalogue manages <strong>32.9 mpg</strong>. There are exactly a
+handful of models near that mark, and you are capped at twelve units of each. Build the most
+economical fleet those constraints permit and you land at <strong>29.82 mpg</strong>.
+</p>
+
+<p>
+You are short by 0.18 mpg. Less than one percent. And there is nothing you can do about it.
+</p>
+
+<div class="callout red">
+<span class="lbl">More money does not help</span>
+<p>
+This is the finding we most want you to take away. We re-ran the analysis at progressively
+larger budgets to see where the target becomes reachable:
+</p>
+<table style="margin-bottom:0">
+<thead><tr><th>If your budget were&hellip;</th><th>Can you hit 30 mpg with a 100 hp floor?</th></tr></thead>
+<tbody>
+<tr><td>$1,550,000 &nbsp;<span class="tag">your budget</span></td><td>No</td></tr>
+<tr><td>$1,860,000 &nbsp;<span class="tag">+20%</span></td><td>No</td></tr>
+<tr><td>$2,500,000 &nbsp;<span class="tag">+61%</span></td><td>No</td></tr>
+<tr><td>$5,000,000 &nbsp;<span class="tag">+223%</span></td><td>No</td></tr>
+</tbody>
+</table>
+<p style="margin-top:3.5mm">
+Money is not your constraint. You are not short of budget — you are short of <em>catalogue</em>.
+Vehicles that tow well and sip fuel simply do not exist in the range available to you, and no
+amount of spending conjures them into existence. Going back to Finance for more money would
+waste everyone's time.
+</p>
+</div>
+
+<h3>What fuel economy actually costs you</h3>
+<p>
+Since the target is negotiable in principle, here is the exchange rate. Each additional mile
+per gallon you demand of the fleet costs you roughly 450 to 550 horsepower, because you
+must substitute economical vehicles in place of powerful ones.
+</p>
+
+<table>
+<thead><tr><th>If the fleet target were&hellip;</th><th class="n">Total horsepower</th><th class="n">Power given up</th><th class="n">Spend</th></tr></thead>
+<tbody>
+<tr><td>27.0 mpg</td><td class="n">8,245</td><td class="n">&mdash;</td><td class="n">$1,549,787</td></tr>
+<tr><td>28.0 mpg</td><td class="n">7,805</td><td class="n">&minus;440</td><td class="n">$1,545,821</td></tr>
+<tr><td>29.0 mpg</td><td class="n">7,347</td><td class="n">&minus;458</td><td class="n">$1,547,033</td></tr>
+<tr><td>29.8 mpg &nbsp;<span class="tag">the ceiling</span></td><td class="n">6,804</td><td class="n">&minus;543</td><td class="n">$1,536,336</td></tr>
+</tbody>
+</table>
+
+<p>
+If corporate will accept 28 mpg instead of 30, you gain roughly a thousand horsepower for
+the same money. That is a conversation worth having before you sign anything.
+</p>
+</section>
+
+<!-- ================= 4. RECOMMENDATION ================= -->
+<section class="pb">
+<h2><span class="num">04</span>Option B — our recommendation</h2>
+
+<p class="lead">
+We tested what happens if the towing threshold moves. The result is unusual enough that it is
+the main reason this report exists.
+</p>
+
+<p>
+Lower the towing floor from 100 hp to 95 hp — a four-horsepower concession affecting
+eleven vehicles — and three things happen at once. You meet the 30 mpg target. You gain
+342 horsepower. And twelve European vehicles enter the fleet.
+</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">63</div><div class="k">Vehicles &nbsp;(+3)</div></div>
+  <div class="kpi good"><div class="v">7,146</div><div class="k">Horsepower &nbsp;(+5%)</div></div>
+  <div class="kpi"><div class="v">$1.55M</div><div class="k">Total spend</div></div>
+  <div class="kpi good"><div class="v">30.0</div><div class="k">Avg mpg &nbsp;(target met)</div></div>
+</div>
+
+<table>
+<thead>
+  <tr>
+    <th style="width:34%">Model</th>
+    <th class="n">Units</th><th class="n">HP each</th><th class="n">MPG</th>
+    <th class="n">Price each</th><th class="n">Subtotal</th><th>Origin</th>
+  </tr>
+</thead>
+<tbody>
+<tr><td>Datsun 280-ZX</td><td class="n">12</td><td class="n">132</td><td class="n">32.7</td><td class="n">$27,354</td><td class="n">$328,248</td><td><span class="tag">Japan</span></td></tr>
+<tr><td>Chevrolet Citation</td><td class="n">12</td><td class="n">115</td><td class="n">28.8</td><td class="n">$24,393</td><td class="n">$292,716</td><td><span class="tag">USA</span></td></tr>
+<tr><td>BMW 2002</td><td class="n">12</td><td class="n">113</td><td class="n">26.0</td><td class="n">$21,000</td><td class="n">$252,000</td><td><span class="tag eu">Europe</span></td></tr>
+<tr><td>Datsun 200SX</td><td class="n">12</td><td class="n">100</td><td class="n">32.9</td><td class="n">$24,581</td><td class="n">$294,972</td><td><span class="tag">Japan</span></td></tr>
+<tr><td>Oldsmobile Omega Brougham</td><td class="n">3</td><td class="n">115</td><td class="n">26.8</td><td class="n">$25,380</td><td class="n">$76,140</td><td><span class="tag">USA</span></td></tr>
+<tr><td>Buick Estate Wagon</td><td class="n">1</td><td class="n">225</td><td class="n">14.0</td><td class="n">$29,008</td><td class="n">$29,008</td><td><span class="tag">USA</span></td></tr>
+<tr><td><strong>Toyota Celica GT</strong> &nbsp;<span class="tag" style="background:#fdf1f0;color:#b03026">96 hp &mdash; below floor</span></td><td class="n">11</td><td class="n">96</td><td class="n">32.0</td><td class="n">$25,051</td><td class="n">$275,561</td><td><span class="tag">Japan</span></td></tr>
+<tr class="total"><td>Total</td><td class="n">63</td><td class="n">7,146</td><td class="n">30.02</td><td class="n"></td><td class="n">$1,548,641</td><td></td></tr>
+</tbody>
+</table>
+
+<h3>Why relaxing a rule makes the fleet <em>stronger</em></h3>
+<p>
+This is counter-intuitive, so it is worth a moment. The 30 mpg target applies to the fleet
+<em>average</em>, not to each vehicle. The eleven Toyotas are extremely economical at
+32 mpg, which creates headroom in the average — and that headroom lets you buy genuinely
+powerful vehicles elsewhere, including a 225 hp Buick that your original rules could never
+have afforded to accommodate. Eleven slightly weaker vehicles buy you the freedom to make the
+other fifty-two considerably stronger.
+</p>
+
+<div class="compare">
+<table>
+<thead><tr><th style="width:34%"></th><th class="n">Option A</th><th class="n">Option B</th><th class="n">Difference</th></tr></thead>
+<tbody>
+<tr><td>Vehicles</td><td class="n">60</td><td class="n">63</td><td class="n">+3</td></tr>
+<tr><td>Total horsepower</td><td class="n">6,804</td><td class="n">7,146</td><td class="n" style="color:#1f7a4d;font-weight:700">+342</td></tr>
+<tr><td>Fleet average mpg</td><td class="n">29.82</td><td class="n">30.02</td><td class="n" style="color:#1f7a4d;font-weight:700">target met</td></tr>
+<tr><td>Total spend</td><td class="n">$1,536,336</td><td class="n">$1,548,641</td><td class="n">+$12,305</td></tr>
+<tr><td>European vehicles</td><td class="n">0</td><td class="n">12</td><td class="n" style="color:#1f7a4d;font-weight:700">+12</td></tr>
+<tr><td>Vehicles below 100 hp</td><td class="n">0</td><td class="n">11</td><td class="n" style="color:#b03026">+11</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout green">
+<span class="lbl">The decision in front of you</span>
+<p>
+Everything hinges on one question: <strong>is the 100 hp towing threshold a hard
+engineering requirement, or a round number somebody picked?</strong>
+</p>
+<p>
+If it is a real limit — a trailer weight, a legal classification, a safety certification — take
+Option A and tell corporate the 30 mpg target is unattainable at any budget.
+If it is a rule of thumb, take Option B. You get more capability, you satisfy
+sustainability, and you get the European vehicles you wanted, for twelve thousand dollars more.
+</p>
+</div>
+</section>
+
+<!-- ================= 5. ASSUMPTIONS ================= -->
+<section class="pb">
+<h2><span class="num">05</span>What we assumed</h2>
+
+<p class="lead">
+Every number in this report rests on the assumptions below. If any of them is wrong, tell us
+and we will re-run the analysis in under a minute.
+</p>
+
+<h3>Prices are estimated, not quoted</h3>
+<p>
+This is the assumption most worth your attention. <strong>The catalogue contains no prices.</strong>
+It lists engine power, weight, fuel economy, model year and origin — but not what anything
+costs. Rather than abandon the analysis, we estimated each vehicle's price from its curb weight
+at <strong>$9.40 per pound</strong>, which puts a typical vehicle in this catalogue at roughly
+$26,000.
+</p>
+<p>
+The recommendations hold as long as heavier vehicles genuinely cost more than lighter ones,
+which is broadly true. But the exact dollar figures are estimates. Give us a real price list
+and the answer may shift — the method will not.
+</p>
+
+<h3>Everything else</h3>
+<ul>
+<li>&ldquo;About $1.55M&rdquo; was read as a firm ceiling of exactly $1,550,000. If you can flex to
+    $1.6M, say so; it does not change the fuel-economy finding, but it may change the mix.</li>
+<li>The 30 mpg target was applied to the <em>fleet average</em>, not to each vehicle
+    individually. Applied per-vehicle it would be far more restrictive, and Option B would
+    not exist. Please confirm which you meant.</li>
+<li>Where the same model appeared several times in the catalogue at different weights, we used
+    the cheapest listing.</li>
+<li>Six listings had no engine-power figure recorded and were excluded rather than guessed at.</li>
+<li>Fuel economy figures are the catalogue's own, unadjusted for load, terrain or duty cycle.
+    A working delivery fleet will do worse in practice — the <em>comparison</em> between options
+    remains valid, but treat 30 mpg as a catalogue figure rather than a promise.</li>
+</ul>
+
+<h3 style="color:#b03026">What we could not answer</h3>
+<p>
+You asked us to prefer European manufacturers. We could not enforce this properly. The
+catalogue records only a broad region — USA, Japan or Europe — with no manufacturer detail
+beneath it, and no way to distinguish, say, a German manufacturer from an Italian one. We
+therefore treated it as a tie-breaker rather than a rule. Option B includes twelve European
+vehicles as a consequence of the numbers, not because we steered toward them. If European
+sourcing matters to you commercially, we need a supplier list to do it justice.
+</p>
+
+<div class="footnote">
+<strong>How this analysis was produced.</strong> An AI agent read the raw vehicle catalogue,
+worked out for itself which columns represented cost, power and efficiency, translated your
+written instructions into a formal mathematical model, and handed that model to an optimisation
+engine that searched the full space of possible fleets. When your original rules turned out to
+be unsatisfiable, the agent identified precisely which rule was responsible and by how much it
+would need to bend, rather than silently discarding it. Every figure in this report was produced
+by that engine and can be reproduced exactly. Nothing here was estimated by eye.
+</div>
+</section>
+
+</body>
+</html>
