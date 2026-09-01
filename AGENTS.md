@@ -9,19 +9,52 @@ alive and takes two seconds.
 
 ---
 
+## Who you are talking to
+
+Assume the person who triggered you is not technical at all. They may not know
+what a constraint is, that a budget has to be a number before it can be used,
+or that the file they handed you is missing the column their question depends
+on. They will not check your maths. They will act on whatever you tell them.
+
+So:
+
+- **Ask before you assume.** A missing budget, cap, deadline, price, capacity
+  or quality rule is a question for the stakeholder, not a number for you to
+  invent. Step 3 is a hard stop for exactly this.
+- **Speak business, not solver.** Nothing the stakeholder reads may contain
+  MILP, CP-SAT, LP, decision variable, objective function, binding constraint,
+  slack, feasible or `row_id`. Say "the limit that is holding you back", not
+  "the binding constraint". Say "we picked 48 stones", not "x_i = 1".
+- **Give every number a unit and a meaning.** "62.39 ct" means nothing to
+  someone who does not trade stones. "62 carats of stone - roughly 48 rings'
+  worth of product" does.
+- **Guide, do not quiz.** Every question you ask must come with why it
+  matters, what changes if the answer moves, and a recommended answer they can
+  accept with one word. Never send a bare "what is your budget?".
+- **Always offer the exit.** Tell them they may reply "you decide" and you
+  will use your recommended defaults and flag every one of them clearly.
+- **Never let a decision rest on a number you invented quietly.** If you had
+  to guess, the guess appears in plain language in the summary of the report,
+  not only in an appendix.
+- **Close with what to do next**, in their language: what to buy, sign, order
+  or approve, and what you still need from them.
+
+---
+
 ## The pipeline
 
-Seven steps. Do them in order. Step 6 is not optional.
+Eight steps. Do them in order. Steps 3 and 7 are not optional.
 
 ```
 CSV + business question
   1. Inspect the data
   2. Understand the business problem
-  3. Choose the optimisation tool
-  4. Construct the model
-  5. Solve
-  6. Read and verify the result
-  7. Explain the recommendation
+  3. Ask the stakeholder about everything missing   <- hard stop
+  4. Choose the optimisation tool
+  5. Construct the model
+  6. Solve
+  7. Read and verify the result
+  8. Explain the recommendation
 ```
 
 ### 0. Start a run
@@ -66,13 +99,75 @@ Before writing any code, write down four things in plain language:
    they name two, ask which dominates, or optimise one and constrain the other.
 3. **Constraints** - every rule, each as a sentence. "Total spend must stay
    within 250k." "No single cut grade may exceed 30% of inventory."
-4. **Assumptions** - every number you had to invent because it is not in the
-   data. These go in the ledger; see below.
+4. **Unknowns** - every number the model needs that is neither in the data nor
+   in the brief. Do not fill these in. Write them down as questions; they are
+   the input to step 3.
 
-If the question is ambiguous, state the interpretation you chose and why. Do
-not silently pick one.
+Then sort the unknowns into two piles:
 
-### 3. Choose the optimisation tool
+- **Must ask** - anything that changes the recommendation: budgets, capacity
+  and headcount, deadlines, minimum quality or service levels, diversification
+  caps, and any price, cost or margin the objective depends on. Also which
+  rows are even in scope, and which objective wins when the brief names two.
+- **May default** - mechanical data hygiene that any practitioner would do the
+  same way: dropping rows with impossible values, snake_casing names, choosing
+  a solver, sampling a large table down to a candidate set. Default these,
+  then tell the stakeholder plainly what you did.
+
+If the question itself is ambiguous, that is a must-ask, not an interpretation
+for you to pick silently.
+
+### 3. Ask the stakeholder about everything missing
+
+**Do not write `model.py` while a must-ask question is open.** A model built on
+invented numbers gives a confident answer to a question nobody asked, and the
+stakeholder cannot tell the difference.
+
+Ask in **one round**, before any modelling. Rules for that round:
+
+- At most six questions. If you have more, you have not sorted must-ask from
+  may-default properly.
+- Plain language only. "How much can you spend in total?" not "what is the
+  budget constraint's right-hand side?"
+- Each question gets: **why it matters**, **what moves if the answer changes**,
+  and **a recommended answer** they can accept with one word.
+- Never ask for something the data already answers. You inspected it in step 1;
+  use it.
+- End with the exit: "Reply 'you decide' and I will use the recommendations
+  above and label each one as my assumption in the report."
+- Where the interface supports structured questions, offer choices rather than
+  free text. A non-technical stakeholder answers "option B" far more readily
+  than a blank field.
+
+A worked example, for a "stock our vault" brief where the file has wholesale
+prices but no budget, no case size and no retail price:
+
+> Before I model this I need five things from you. My recommendation is in
+> brackets - say "you decide" and I will use all of them.
+>
+> 1. **How much can you spend in total?** This is the single biggest lever on
+>    how many stones you get. (I would assume USD 250,000 as a first tranche.)
+> 2. **How many stones fit in the display case?** If the case fills before the
+>    money runs out, spending more buys nothing. (I would assume 48 settings.)
+> 3. **What do you sell these for?** The file has what you pay, not what you
+>    charge, so I cannot judge profit without it. A rough markup per quality
+>    grade is enough. (I would assume roughly 2x wholesale.)
+> 4. **Do you want the most stone for the money, or the most profit?** They
+>    pull in different directions and I can only aim at one. (I would maximise
+>    stone weight and hold profit above a floor.)
+> 5. **Any grades you refuse to stock?** Some cheap stones are heavy but
+>    visibly flawed. (I would cap the lowest clarity grade at 10% of the case.)
+
+Then wait. If the stakeholder answers, those numbers are **facts** and the
+ledger records them as confirmed. If they say "you decide", or do not answer,
+proceed on your recommended defaults - but the report must say, in the
+recommendation itself, that the headline number rests on figures you chose.
+
+If a single answer would change the recommendation enormously, do not average
+it away: solve it both ways and show both, or ask again with the two outcomes
+side by side. That is more useful than a precise answer to a guessed question.
+
+### 4. Choose the optimisation tool
 
 ```bash
 riskon solvers
@@ -92,7 +187,7 @@ Pick by problem class, not preference:
 `gurobipy` is installed but its pip licence caps out around 2000 variables and
 2000 constraints. Do not reach for it first.
 
-### 4. Construct the model
+### 5. Construct the model
 
 There is no intermediate spec file. **`model.py` is the formulation.**
 
@@ -137,7 +232,7 @@ candidates = wb.materialize("""
 large tables sample in SQL - `USING SAMPLE 200 ROWS`, or a stratified sample
 per category with `QUALIFY row_number() OVER (PARTITION BY cut ORDER BY ...)`.
 
-### 5. Solve
+### 6. Solve
 
 ```bash
 python3 model.py
@@ -151,15 +246,18 @@ Diagnose it:
 2. Report it in business terms: "a 250k budget cannot buy 12 vehicles when the
    cheapest qualifying model is 24k; either the budget or the fleet size has to
    move."
-3. Only then relax, and say explicitly what you relaxed and why.
+3. Take that sentence back to the stakeholder and let them choose which rule
+   gives way. A limit they stated is theirs to move, not yours - never quietly
+   loosen a number they gave you. A number *you* invented you may relax
+   yourself, and the report says which one and by how much.
 
 **If the status is UNBOUNDED**, a constraint is missing - usually an upper
 bound on a decision variable.
 
 **If the result looks too good**, it usually is. A common cause is a constraint
-that was written but never added to the solver. Step 6 catches this.
+that was written but never added to the solver. Step 7 catches this.
 
-### 6. Read and verify the result
+### 7. Read and verify the result
 
 Never trust the solver's own arithmetic as your only check. Recompute every
 constraint independently with pandas, against `source` rather than the same SQL
@@ -181,27 +279,41 @@ Then confirm the artifact is coherent:
 riskon sql "SELECT name, business_rule, bound, achieved, slack, binding FROM constraints"
 ```
 
-### 7. Explain the recommendation
+### 8. Explain the recommendation
 
-Write `report.md` in the run directory, aimed at an executive who will never
-read the code. Build it by querying the artifact, not from memory.
+Write `report.md` in the run directory, aimed at someone who will never read
+the code and does not know what a solver is. Build it by querying the artifact,
+not from memory.
 
 Required sections:
 
 - **Recommendation** - the decision, in one or two sentences, with the headline
-  number. Lead with this.
+  number. Lead with this. If the headline rests on numbers you invented rather
+  than numbers they gave you, say so in this section, in one clause.
 - **What this achieves** - the objective value, and what it means in business
   terms rather than as a raw number.
 - **The decision** - a table of what to do. Names, not row indices.
-- **Why these and not others** - which constraints bind, and what the next-best
-  option was. This is the most valuable section; a stakeholder wants to know
-  what is holding them back.
-- **What would change the answer** - the binding constraints are the levers.
+- **Why these and not others** - which limits are holding them back, and what
+  the next-best option was. This is the most valuable section; a stakeholder
+  wants to know what is in their way. Name the limit in their own words - "the
+  display case is full", not "the tray constraint is binding".
+- **What would change the answer** - those same limits are the levers.
   "Raising the budget by 20k adds two vehicles" is worth more than the optimum.
-- **Assumptions** - the ledger, in full. Every invented number, stated plainly.
-- **How to check this** - the run directory and the query that reproduces it.
+- **What I had to guess** - every number that came from you rather than from
+  them or the data, each with what it would take to replace it with a real
+  figure, and how much the answer moves if it is wrong. Lead with the guesses
+  that matter most. If the stakeholder answered your step 3 questions, this
+  section says so and stays short.
+- **Assumptions** - the ledger, in full, marked confirmed or guessed.
+- **How to check this** - the run directory and the query that reproduces it,
+  labelled as being for whoever audits the work rather than for the reader.
 
-Tables in the report use business names. `row_id` is plumbing, not a finding.
+Then re-read the whole thing as the stakeholder. Every sentence they could not
+explain back to a colleague gets rewritten or deleted. Tables use business
+names; `row_id` is plumbing, not a finding.
+
+Alongside the report, tell them in chat what happens next: what to approve,
+buy or sign, and which answers from them would sharpen the number.
 
 ---
 
@@ -227,15 +339,24 @@ is genuinely awkward in both.
 
 ### The assumption ledger
 
-Any number you invented rather than read from the data goes in the ledger:
+Any number that did not come out of the data goes in the ledger, and each entry
+records where it *did* come from. Prefix every entry with one of three words:
 
 ```python
-wb.add_assumption("No price column exists; used weight * 8 EUR/kg as a cost proxy.")
-wb.add_assumption("Driver pool size set to 12; not present in the data.")
+wb.add_assumption("CONFIRMED: budget of 250,000 USD - given by the stakeholder when asked.")
+wb.add_assumption("DECLINED: asked for retail prices, stakeholder said 'you decide'; used 2x wholesale by cut grade.")
+wb.add_assumption("GUESSED: driver pool size set to 12; not in the data and could not ask.")
 ```
 
-Inventing a number is fine and often necessary. Hiding it is not. Every
-assumption appears verbatim in the report.
+`CONFIRMED` entries are facts. `DECLINED` and `GUESSED` entries are risks, and
+a long list of them means step 3 was skipped or rushed. A ledger of ten guesses
+behind one confident headline number is the failure this playbook exists to
+prevent: the stakeholder cannot see which of the ten is load-bearing, so they
+trust all of them.
+
+Inventing a number is a last resort, not a shortcut past asking. Every entry
+appears verbatim in the report, and the `DECLINED` and `GUESSED` ones are also
+summarised in plain language in "What I had to guess".
 
 ### The artifact
 
