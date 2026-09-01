@@ -1,4 +1,4 @@
-"""``riskon`` command line: six commands, zero problem-specific logic."""
+"""``riskon`` command line: nine commands, zero problem-specific logic."""
 
 from __future__ import annotations
 
@@ -58,6 +58,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_export.add_argument("run", nargs="?", default=None, help="run directory")
     p_export.add_argument("--format", default="csv", choices=["csv", "parquet"])
     p_export.add_argument("--into", default=None, help="destination directory")
+
+    p_publish = sub.add_parser(
+        "publish",
+        help="copy a run's deliverables into artifacts/ so they leave the machine",
+    )
+    p_publish.add_argument("run", nargs="?", default=None, help="run directory")
+    p_publish.add_argument(
+        "--into",
+        default=None,
+        help="destination directory (defaults to artifacts/ at the repo root)",
+    )
 
     sub.add_parser("runs", help="list run directories")
 
@@ -165,6 +176,63 @@ def cmd_export(run: str | None, fmt: str, into: str | None) -> int:
     return 0
 
 
+# The three files a run always produces, and the tables worth handing over as
+# spreadsheets. `source` and `candidates` are deliberately absent: they are
+# inputs, they can be huge, and workbench.duckdb already carries them.
+_PUBLISH_FILES = ("report.md", "model.py", "workbench.duckdb")
+_PUBLISH_TABLES = {"solution": "decision.csv", "constraints": "constraints.csv"}
+
+
+def cmd_publish(run: str | None, into: str | None) -> int:
+    run_dir = _require_run(run)
+    destination = Path(into) if into else paths.artifacts_dir()
+    destination.mkdir(parents=True, exist_ok=True)
+
+    written: list[Path] = []
+    missing: list[str] = []
+
+    for name in _PUBLISH_FILES:
+        source = Path(run_dir) / name
+        if not source.exists():
+            missing.append(name)
+            continue
+        target = destination / name
+        shutil.copy2(source, target)
+        written.append(target)
+
+    workbench = Path(run_dir) / "workbench.duckdb"
+    if workbench.exists():
+        with open_run(run_dir) as wb:
+            for table, filename in _PUBLISH_TABLES.items():
+                if not wb.has_table(table):
+                    missing.append(f"{table} table")
+                    continue
+                frame = wb.sql(f"SELECT * FROM {table}")
+                if frame.empty:
+                    missing.append(f"{table} table (empty)")
+                    continue
+                target = destination / filename
+                frame.to_csv(target, index=False)
+                written.append(target)
+
+    for path in written:
+        print(f"{path.stat().st_size:>10,} B  {path}")
+
+    if missing:
+        print(f"\nnot published (absent): {', '.join(missing)}", file=sys.stderr)
+
+    if not written:
+        print(
+            f"\nnothing to publish from {run_dir}. Solve the model and write "
+            "report.md first; artifacts/ is the only path off this machine.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"\n{len(written)} file(s) published to {destination}")
+    return 0
+
+
 def cmd_runs() -> int:
     root = paths.runs_dir()
     if not root.exists():
@@ -198,6 +266,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_profile(args.table, args.run)
     if args.command == "export":
         return cmd_export(args.run, args.format, args.into)
+    if args.command == "publish":
+        return cmd_publish(args.run, args.into)
     if args.command == "runs":
         return cmd_runs()
 

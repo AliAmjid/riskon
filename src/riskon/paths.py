@@ -63,6 +63,17 @@ def templates_dir() -> Path:
     return repo_root() / "templates"
 
 
+def artifacts_dir() -> Path:
+    """The delivery counter: the only directory whose contents leave the machine.
+
+    A cloud agent's host collects whatever is under ``<workspace>/artifacts``,
+    so this is how a report reaches the person who asked for it. Created on
+    demand rather than at import time - a read-only command should not leave an
+    empty directory behind.
+    """
+    return _env_dir("RISKON_ARTIFACTS_DIR", repo_root() / "artifacts")
+
+
 def slugify(text: str) -> str:
     slug = _SLUG_RE.sub("-", text.strip().lower()).strip("-")
     return slug or "run"

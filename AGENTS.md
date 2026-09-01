@@ -43,7 +43,7 @@ So:
 
 ## The pipeline
 
-Eight steps. Do them in order. Steps 3 and 7 are not optional.
+Nine steps. Do them in order. Steps 3, 7 and 9 are not optional.
 
 ```
 CSV + business question
@@ -55,6 +55,7 @@ CSV + business question
   6. Solve
   7. Read and verify the result
   8. Explain the recommendation
+  9. Publish the deliverables to artifacts/         <- hard stop
 ```
 
 ### 0. Start a run
@@ -166,6 +167,48 @@ recommendation itself, that the headline number rests on figures you chose.
 If a single answer would change the recommendation enormously, do not average
 it away: solve it both ways and show both, or ask again with the two outcomes
 side by side. That is more useful than a precise answer to a guessed question.
+
+#### How to actually reach the stakeholder
+
+You are usually running headless: nobody is reading the chat transcript live.
+When the `riskon` MCP server is connected you have a real channel to the person
+who triggered the run, and **that channel is the only one that works**. Writing
+your questions into the transcript and carrying on is the same as not asking.
+
+Check for the tools once, at the start of step 3:
+
+- **`ask_stakeholder`** - send the whole round in one call and block until it is
+  answered. Pass `questions` as a list, each with:
+
+  | Field | Meaning |
+  | --- | --- |
+  | `id` | short slug you will use to read the answer back, e.g. `budget` |
+  | `question` | the plain-language question |
+  | `why_it_matters` | what moves if the answer moves |
+  | `recommended` | the answer they can accept with one word |
+  | `options` | optional list of `{value, label}` choices - prefer these over free text |
+  | `unit` | optional unit shown next to a free-text answer, e.g. `USD`, `carats` |
+
+  It returns `{status, answers}`. `status` is `answered` when they replied,
+  `declined` when they pressed "you decide", `timeout` when nobody was there.
+  For `answered`, `answers` maps each `id` to what they typed or picked.
+
+- **`await_answers`** - if `ask_stakeholder` comes back `pending`, the round is
+  still open and the wait simply ran out of time. Call `await_answers` with the
+  returned `request_id` to keep waiting. Repeat until you get a terminal
+  status; do not start modelling in between.
+
+- **`notify_stakeholder`** - one-way progress note, no blocking, no answer. Use
+  it sparingly: when you are about to start a solve that will take a while, or
+  when you have just discovered something in the data that changes the shape of
+  the question. Never use it to ask something.
+
+Map the outcome straight onto the ledger: `answered` gives `CONFIRMED` entries,
+`declined` gives `DECLINED` entries, `timeout` gives `GUESSED` entries.
+
+If the MCP server is *not* connected, you have no channel. Say so in the report
+in one sentence, proceed on your recommended defaults, and mark every one of
+them `GUESSED`.
 
 ### 4. Choose the optimisation tool
 
@@ -315,6 +358,40 @@ names; `row_id` is plumbing, not a finding.
 Alongside the report, tell them in chat what happens next: what to approve,
 buy or sign, and which answers from them would sharpen the number.
 
+### 9. Publish the deliverables to `artifacts/`
+
+The run directory lives on a machine the stakeholder cannot reach. Only files
+under `artifacts/` at the repo root are collected and handed back, so a report
+left in `runs/` is a report nobody receives. Copy, do not move - `runs/` stays
+intact as the audit trail.
+
+```bash
+riskon publish
+```
+
+That copies the current run's `report.md`, `model.py` and `workbench.duckdb`
+into `artifacts/`, plus a CSV of the decision and one of the constraints so the
+stakeholder can open the answer in a spreadsheet without a DuckDB client. It
+prints what it wrote; check that list is not empty before you finish.
+
+The result is:
+
+```
+artifacts/
+  report.md          the recommendation, and the file to read first
+  decision.csv       what to do, one row per choice
+  constraints.csv    every rule, with what it allowed and what you used
+  model.py           the formulation
+  workbench.duckdb   the full artifact, for whoever audits the work
+```
+
+Anything else worth handing over - a chart, a sensitivity table, a second
+scenario - goes in `artifacts/` too, under a name that says what it is.
+`sensitivity-budget.csv`, not `output2.csv`.
+
+Finish your last message with the headline recommendation in one sentence. It
+is what the stakeholder sees first, above the file list.
+
 ---
 
 ## House rules
@@ -379,9 +456,13 @@ runs/<timestamp>-<slug>/
 | `constraints` | name, `business_rule`, `expression`, bound, achieved, slack, binding |
 | `meta` | question, queries, solver, status, objective, runtime, assumptions |
 
-Do not write intermediate CSV or Parquet files next to it. `riskon export` is
-the only way another format leaves the system, and it is an exit rather than a
-step.
+Do not write intermediate CSV or Parquet files next to it. `riskon export` and
+`riskon publish` are the only ways another format leaves the system, and they
+are exits rather than steps.
+
+`artifacts/` at the repo root is the delivery counter, not a working directory.
+Nothing reads from it, `riskon publish` is the only thing that writes to it, and
+it is git-ignored - it exists so the deliverables can leave the machine.
 
 ### Canonical shape
 
@@ -402,6 +483,7 @@ riskon sql "<query>"            # query the current run's workbench
 riskon profile [table]          # re-print a profile
 riskon runs                     # list runs
 riskon export [run] --format csv
+riskon publish [run]            # copy the deliverables into artifacts/
 ```
 
 Templates in `templates/`: `selection_milp`, `assignment_cpsat`,

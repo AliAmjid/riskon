@@ -1,6 +1,10 @@
 # Run artifacts are derived state - rebuilt from data/ in seconds.
 runs/
 data/cache/
+
+# The delivery counter. The cloud host collects whatever lands here, so its
+# contents are per-run output, never repo content.
+artifacts/
 *.duckdb
 *.duckdb.wal
 
