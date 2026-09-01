@@ -283,8 +283,8 @@ riskon runs                     # list runs
 riskon export [run] --format csv
 ```
 
-Templates in `templates/`: `selection_milp`, `assignment_cpsat`,
-`scheduling_cpsat`, `blend_lp`. They are structure, not answers - you still map
-the columns and encode the real rules.
+Templates in `templates/`: `selection_milp`, `vault_selection_milp`,
+`assignment_cpsat`, `scheduling_cpsat`, `blend_lp`. They are structure, not
+answers - you still map the columns and encode the real rules.
 
 Datasets in `data/` with their business framing in `data/README.md`.
