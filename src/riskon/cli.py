@@ -1,4 +1,4 @@
-"""``riskon`` command line: nine commands, zero problem-specific logic."""
+"""``riskon`` command line: ten commands, zero problem-specific logic."""
 
 from __future__ import annotations
 
@@ -61,13 +61,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_publish = sub.add_parser(
         "publish",
-        help="copy a run's deliverables into artifacts/ so they leave the machine",
+        help="copy a run's deliverables into the artifacts store so they leave the machine",
     )
     p_publish.add_argument("run", nargs="?", default=None, help="run directory")
     p_publish.add_argument(
         "--into",
         default=None,
-        help="destination directory (defaults to artifacts/ at the repo root)",
+        help="destination directory (defaults to the resolved artifacts store)",
+    )
+
+    p_where = sub.add_parser("where", help="print a resolved path")
+    p_where.add_argument(
+        "what",
+        nargs="?",
+        default=None,
+        choices=sorted(_WHERE),
+        help="which location; omit to print them all",
     )
 
     sub.add_parser("runs", help="list run directories")
@@ -233,6 +242,37 @@ def cmd_publish(run: str | None, into: str | None) -> int:
     return 0
 
 
+_WHERE = {
+    "artifacts": paths.artifacts_dir,
+    "data": paths.data_dir,
+    "repo": paths.repo_root,
+    "runs": paths.runs_dir,
+    "templates": paths.templates_dir,
+}
+
+
+def cmd_where(what: str | None) -> int:
+    """Print a resolved path.
+
+    The artifacts store moves between a laptop and a cloud agent, so anything
+    that needs to write there has to ask rather than assume.
+    """
+    if what:
+        resolver = _WHERE.get(what)
+        if resolver is None:
+            print(
+                f"unknown location {what!r}; try one of: {', '.join(sorted(_WHERE))}",
+                file=sys.stderr,
+            )
+            return 2
+        print(resolver())
+        return 0
+
+    for name in sorted(_WHERE):
+        print(f"{name:<10} {_WHERE[name]()}")
+    return 0
+
+
 def cmd_runs() -> int:
     root = paths.runs_dir()
     if not root.exists():
@@ -268,6 +308,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_export(args.run, args.format, args.into)
     if args.command == "publish":
         return cmd_publish(args.run, args.into)
+    if args.command == "where":
+        return cmd_where(args.what)
     if args.command == "runs":
         return cmd_runs()
 

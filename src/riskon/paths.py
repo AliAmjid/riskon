@@ -63,15 +63,29 @@ def templates_dir() -> Path:
     return repo_root() / "templates"
 
 
+#: Where a Cursor cloud agent's host collects artifacts from. It is a symlink
+#: into the agent's own store, and it is *not* inside the repo checkout - a file
+#: written to ``<repo>/artifacts`` is never collected, which looks identical to
+#: a successful publish right up until the stakeholder receives nothing.
+_CLOUD_ARTIFACTS = Path("/opt/cursor/artifacts")
+
+
 def artifacts_dir() -> Path:
     """The delivery counter: the only directory whose contents leave the machine.
 
-    A cloud agent's host collects whatever is under ``<workspace>/artifacts``,
-    so this is how a report reaches the person who asked for it. Created on
-    demand rather than at import time - a read-only command should not leave an
-    empty directory behind.
+    On a laptop this is ``<repo>/artifacts``. Inside a Cursor cloud agent it is
+    the host's collection point instead, because that is the only place the
+    stakeholder can be reached from. Created on demand rather than at import
+    time - a read-only command should not leave an empty directory behind.
     """
-    return _env_dir("RISKON_ARTIFACTS_DIR", repo_root() / "artifacts")
+    override = os.environ.get("RISKON_ARTIFACTS_DIR")
+    if override:
+        return _env_dir("RISKON_ARTIFACTS_DIR", repo_root() / "artifacts")
+
+    if os.environ.get("CURSOR_AGENT") and _CLOUD_ARTIFACTS.parent.is_dir():
+        return _CLOUD_ARTIFACTS
+
+    return repo_root() / "artifacts"
 
 
 def slugify(text: str) -> str:

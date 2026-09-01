@@ -55,7 +55,7 @@ CSV + business question
   6. Solve
   7. Read and verify the result
   8. Explain the recommendation
-  9. Publish the deliverables to artifacts/         <- hard stop
+  9. Publish the deliverables with riskon publish   <- hard stop
 ```
 
 ### 0. Start a run
@@ -358,26 +358,34 @@ names; `row_id` is plumbing, not a finding.
 Alongside the report, tell them in chat what happens next: what to approve,
 buy or sign, and which answers from them would sharpen the number.
 
-### 9. Publish the deliverables to `artifacts/`
+### 9. Publish the deliverables
 
-The run directory lives on a machine the stakeholder cannot reach. Only files
-under `artifacts/` at the repo root are collected and handed back, so a report
-left in `runs/` is a report nobody receives. Copy, do not move - `runs/` stays
-intact as the audit trail.
+The run directory lives on a machine the stakeholder cannot reach. Only the
+artifacts store is collected and handed back, so a report left in `runs/` is a
+report nobody receives. Copy, do not move - `runs/` stays intact as the audit
+trail.
 
 ```bash
 riskon publish
 ```
 
 That copies the current run's `report.md`, `model.py` and `workbench.duckdb`
-into `artifacts/`, plus a CSV of the decision and one of the constraints so the
+into the store, plus a CSV of the decision and one of the constraints so the
 stakeholder can open the answer in a spreadsheet without a DuckDB client. It
-prints what it wrote; check that list is not empty before you finish.
+prints the destination and what it wrote; check that list is not empty before
+you finish.
+
+**Do not write deliverables by hand.** `riskon publish` resolves where the
+store actually is, and it is not `<repo>/artifacts` when you are running in the
+cloud - it is `/opt/cursor/artifacts`, outside the checkout. A file copied to
+the repo's own `artifacts/` directory looks published and is silently discarded,
+which is the worst possible failure: the run reports success and the
+stakeholder receives nothing.
 
 The result is:
 
 ```
-artifacts/
+<the artifacts store>
   report.md          the recommendation, and the file to read first
   decision.csv       what to do, one row per choice
   constraints.csv    every rule, with what it allowed and what you used
@@ -386,7 +394,8 @@ artifacts/
 ```
 
 Anything else worth handing over - a chart, a sensitivity table, a second
-scenario - goes in `artifacts/` too, under a name that says what it is.
+scenario - goes there too, via `riskon publish --into "$(riskon where artifacts)"`
+or by writing it into the run directory first. Name it for what it is:
 `sensitivity-budget.csv`, not `output2.csv`.
 
 Finish your last message with the headline recommendation in one sentence. It
@@ -460,9 +469,11 @@ Do not write intermediate CSV or Parquet files next to it. `riskon export` and
 `riskon publish` are the only ways another format leaves the system, and they
 are exits rather than steps.
 
-`artifacts/` at the repo root is the delivery counter, not a working directory.
-Nothing reads from it, `riskon publish` is the only thing that writes to it, and
-it is git-ignored - it exists so the deliverables can leave the machine.
+The artifacts store is the delivery counter, not a working directory. Nothing
+reads from it, `riskon publish` is the only thing that writes to it, and it
+exists solely so the deliverables can leave the machine. Its location depends on
+where you are running - `riskon where artifacts` resolves it - and writing there
+by hand is how a report gets silently dropped.
 
 ### Canonical shape
 
@@ -482,8 +493,9 @@ riskon load <file|url>          # convert to a canonical table, print profile
 riskon sql "<query>"            # query the current run's workbench
 riskon profile [table]          # re-print a profile
 riskon runs                     # list runs
+riskon where [artifacts|runs|data|repo|templates]
 riskon export [run] --format csv
-riskon publish [run]            # copy the deliverables into artifacts/
+riskon publish [run]            # copy the deliverables into the artifacts store
 ```
 
 Templates in `templates/`: `selection_milp`, `assignment_cpsat`,
