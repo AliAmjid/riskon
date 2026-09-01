@@ -91,8 +91,8 @@ Run `riskon doctor` to confirm, and `riskon solvers` for which one to reach for.
 ```
 AGENTS.md            the playbook the agent follows
 src/riskon/          workbench + CLI (db.py, cli.py, solvers.py, paths.py)
-templates/           model skeletons: selection_milp, assignment_cpsat,
-                     scheduling_cpsat, blend_lp
+templates/           model skeletons: selection_milp, vault_selection_milp,
+                     assignment_cpsat, scheduling_cpsat, blend_lp
 data/                the three track datasets, framed in data/README.md
 tests/               end-to-end smoke test of the database-to-solver path
 .cursor/             Dockerfile + environment.json for the agent image
