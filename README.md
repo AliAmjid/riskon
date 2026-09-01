@@ -5,7 +5,8 @@ and a dataset; it returns a decision, the evidence that the decision is correct,
 and an explanation a non-technical stakeholder can act on.
 
 **The agent's instructions live in [AGENTS.md](AGENTS.md).** This file is
-orientation for humans.
+orientation for humans. The problem statement this was built against is in
+[docs/BRIEF.md](docs/BRIEF.md).
 
 ## The pipeline
 
