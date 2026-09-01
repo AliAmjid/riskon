@@ -1,0 +1,19 @@
+# Run artifacts are derived state - rebuilt from data/ in seconds.
+runs/
+data/cache/
+*.duckdb
+*.duckdb.wal
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# OS
+.DS_Store

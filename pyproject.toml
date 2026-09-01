@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "riskon"
+version = "0.1.0"
+description = "Operations Research agent workstation: business question + data -> verified optimal decision"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.1",
+    "pandas>=2.2",
+    "numpy>=1.26,<3",
+    "pyarrow>=16",
+    "polars>=1.0",
+    "python-dateutil>=2.9",
+    "requests>=2.32",
+    "openpyxl>=3.1",
+    # Do not add highspy: its libhighs symbols collide with the copy bundled
+    # in libortools.so and break pywraplp/CP-SAT. See requirements.txt.
+    "ortools>=9.14,<10",
+    "pulp>=3.0",
+    "scipy>=1.13",
+    "cvxpy>=1.5",
+    "Pyomo>=6.7",
+    "gurobipy>=11",
+    "networkx>=3.3",
+    "tabulate>=0.9",
+    "matplotlib>=3.8",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2", "ruff>=0.5", "ipython>=8.24"]
+
+[project.scripts]
+riskon = "riskon.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "templates", "tests"]
+
+# Pinned explicitly so results do not drift when ruff changes its defaults.
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

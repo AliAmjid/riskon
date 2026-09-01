@@ -1,0 +1,7 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "python3 -m pip install --break-system-packages --no-deps -e . && riskon doctor"
+}
