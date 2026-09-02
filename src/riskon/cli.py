@@ -298,12 +298,15 @@ def cmd_publish(run: str | None, into: str | None) -> int:
         print(f"\nnot published (absent): {', '.join(missing)}", file=sys.stderr)
 
     if "walkthrough.md" in missing:
-        # Step 8 requires it and the templates do not write it, so the reminder
-        # has to come from here or it gets forgotten every run.
+        # Step 8 requires it. A warning was being ignored every run, so this
+        # is now a failed publish: other files still land so the stakeholder
+        # is not empty-handed, but the agent must write the walkthrough and
+        # publish again.
         print(
             "\nwalkthrough.md is missing. The report says what to do; the "
-            "walkthrough says how you got there, and the stakeholder gets no "
-            "reasoning without it. See step 8.",
+            "walkthrough says how you turned the question into a search, and "
+            "the stakeholder's 'How we got here' tab is empty without it. "
+            "Write it (see step 8) and run riskon publish again.",
             file=sys.stderr,
         )
 
@@ -316,7 +319,7 @@ def cmd_publish(run: str | None, into: str | None) -> int:
         return 1
 
     print(f"\n{len(written)} file(s) published to {destination}")
-    return 0
+    return 1 if "walkthrough.md" in missing else 0
 
 
 _WHERE = {

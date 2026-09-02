@@ -20,7 +20,7 @@ ASSUMPTIONS
 This is a TEMPLATE. It runs as-is against data/mpg.csv so you can see the whole
 loop work, then you edit CONFIG and the constraint block for the real question.
 Structure to keep: materialise candidates -> solve -> verify independently ->
-record to the artifact -> write the report.
+record to the artifact -> write the report and the walkthrough.
 """
 
 from __future__ import annotations
@@ -317,6 +317,66 @@ def write_report(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float)
     return "\n".join(lines)
 
 
+def write_walkthrough(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float) -> str:
+    rules = "\n".join(
+        f"{i}. {item.business_rule} — "
+        f"{'held, and this is the limit that stopped a better answer' if item.binding else 'held'}."
+        for i, item in enumerate(log.items, start=1)
+    )
+    return "\n".join(
+        [
+            "# How we got here",
+            "",
+            "## The question you asked",
+            "",
+            "Which vehicles from the catalogue should we buy so the fleet is as "
+            "powerful as it can be, without overspending or missing the "
+            "efficiency and mix rules.",
+            "",
+            "## What we worked from",
+            "",
+            f"The catalogue, narrowed to the vehicles that list engine power. "
+            f"We are recommending {len(chosen)} of them.",
+            "",
+            "## What we had to pin down before we could start",
+            "",
+            "The file has no purchase price. We treated weight times 8 as the "
+            "unit cost and recorded that as a guess. The budget, the 25 mpg "
+            "floor, the origin cap and the ten-vehicle ceiling are the numbers "
+            "this answer rests on.",
+            "",
+            "## The rules we held to",
+            "",
+            rules,
+            "",
+            "## How we turned your question into a search",
+            "",
+            "For every vehicle we asked a yes-or-no: take it or leave it. "
+            f'"Best" means the most combined engine power '
+            f"(this mix totals {objective:,.0f}). The rules above are the walls "
+            "of the search — any mix that breaks one is discarded. The list "
+            "you have is the mix that scores highest inside those walls, not "
+            "a shortlist we preferred.",
+            "",
+            "## How we checked it",
+            "",
+            "We added up spend, average mpg and origin shares on the chosen "
+            "rows from the original catalogue, independently of the search. "
+            "Had those numbers broken a rule, we would have thrown the answer "
+            "out and diagnosed the model.",
+            "",
+            "## Where this could be wrong",
+            "",
+            "The price is invented from weight. If real quotes come in higher, "
+            "the budget binds sooner and the fleet shrinks.",
+            "",
+            "## Assumptions",
+            "",
+            *([f"- {a}" for a in wb.assumptions()] or ["- None."]),
+        ]
+    )
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -349,10 +409,8 @@ def main() -> int:
     )
 
     report = write_report(wb, chosen, log, objective)
-    run_dir = paths.current_run()
-    if run_dir is not None:
-        (run_dir / "report.md").write_text(report, encoding="utf-8")
-        print(f"report: {run_dir / 'report.md'}")
+    walkthrough = write_walkthrough(wb, chosen, log, objective)
+    paths.write_docs(report, walkthrough)
 
     print()
     print(report)

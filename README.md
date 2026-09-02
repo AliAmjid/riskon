@@ -19,13 +19,14 @@ CSV + business question
   5. Construct the model       runs/<id>/model.py
   6. Solve                     python3 model.py
   7. Read and verify           independent pandas re-check vs source
-  8. Explain                   runs/<id>/report.md
+  8. Explain                   runs/<id>/report.md and walkthrough.md
   9. Publish                   riskon publish
 ```
 
-Steps 3 and 9 are the two that are cheap to skip and expensive to have skipped.
-A model built on numbers nobody confirmed answers a question nobody asked, and
-a report left in `runs/` is a report the stakeholder never receives.
+Steps 3, 8 and 9 are the ones that are cheap to skip and expensive to have skipped.
+A model built on numbers nobody confirmed answers a question nobody asked, a
+report without a walkthrough is a number the stakeholder has to take on faith,
+and a file left in `runs/` is a file they never receive.
 
 ## Quick start
 
@@ -52,13 +53,14 @@ carries through `source` -> `candidates` -> `solution`, which is what makes
 
 ## The artifact
 
-Each run directory holds exactly three things:
+Each run directory holds exactly four things:
 
 ```
 runs/<timestamp>-<slug>/
   workbench.duckdb   the artifact
   model.py           the formulation
   report.md          the recommendation
+  walkthrough.md     how the question became a search
 ```
 
 `workbench.duckdb` is a single portable file containing five tables:

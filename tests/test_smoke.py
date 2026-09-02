@@ -198,6 +198,12 @@ def test_selection_milp_end_to_end(run_dir):
     assert "## Recommendation" in report
     assert "## Assumptions" in report
 
+    # The walkthrough is the file the stakeholder's "How we got here" tab
+    # opens. A report without it is a number they have to take on faith.
+    assert (run_dir / "walkthrough.md").exists()
+    walkthrough = (run_dir / "walkthrough.md").read_text(encoding="utf-8")
+    assert "## How we turned your question into a search" in walkthrough
+
 
 def test_export_writes_csv(run_dir):
     with Workbench(run_dir / "workbench.duckdb") as wb:
@@ -241,6 +247,42 @@ def test_cli_load_and_sql(run_dir):
     )
     assert query.returncode == 0, query.stdout + query.stderr
     assert "398" in query.stdout
+
+
+def test_cli_publish_refuses_a_missing_walkthrough(run_dir, tmp_path):
+    (run_dir / "report.md").write_text("# Recommendation\nBuy ten.\n", encoding="utf-8")
+    destination = tmp_path / "store"
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "riskon.cli", "publish", "--into", str(destination)],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 1
+    assert "walkthrough.md is missing" in completed.stderr
+    # The report still lands, so the stakeholder is not empty-handed.
+    assert (destination / "report.md").exists()
+    assert not (destination / "walkthrough.md").exists()
+
+
+def test_cli_publish_copies_the_walkthrough(run_dir, tmp_path):
+    (run_dir / "report.md").write_text("# Recommendation\nBuy ten.\n", encoding="utf-8")
+    (run_dir / "walkthrough.md").write_text(
+        "# How we got here\n\n## How we turned your question into a search\n",
+        encoding="utf-8",
+    )
+    destination = tmp_path / "store"
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "riskon.cli", "publish", "--into", str(destination)],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert (destination / "walkthrough.md").exists()
+    assert "walkthrough.md" in completed.stdout
 
 
 def test_connect_without_a_run_is_in_memory(monkeypatch, tmp_path):

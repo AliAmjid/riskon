@@ -231,6 +231,64 @@ def main() -> int:
     )
 
     spend = float(held["spend"].sum())
+    rules = "\n".join(
+        f"{i}. {item.business_rule} — "
+        f"{'held, and this is the limit that stopped a better answer' if item.binding else 'held'}."
+        for i, item in enumerate(log.items, start=1)
+    )
+    walkthrough = "\n".join(
+        [
+            "# How we got here",
+            "",
+            "## The question you asked",
+            "",
+            "How should we spend the credit line across the stone list so we "
+            "bring in as many carats as possible, without letting any one cut "
+            "grade take over the tray.",
+            "",
+            "## What we worked from",
+            "",
+            f"A sample of the registry — {len(held)} stones in the mix, drawn "
+            "evenly across cut grades so the diversification rule has "
+            "something to push against. The full listing is a market catalogue, "
+            "not a purchase menu.",
+            "",
+            "## What we had to pin down before we could start",
+            "",
+            f"The credit line ({CREDIT_LINE:,.0f}), the cap that no cut grade "
+            f"may take more than {MAX_CATEGORY_SHARE:.0%} of spend, and that "
+            "we can take a fraction of a listing to mean 'roughly this much "
+            "of this grade'.",
+            "",
+            "## The rules we held to",
+            "",
+            rules,
+            "",
+            "## How we turned your question into a search",
+            "",
+            "For every stone we chose how much of it to take — including none. "
+            f'"Best" means the most carats for the money (this mix totals '
+            f"{objective:,.2f} carats). The credit line and the per-grade cap "
+            "are the walls of the search. The mix you have is the one that "
+            "scores highest inside those walls, not a shortlist we preferred.",
+            "",
+            "## How we checked it",
+            "",
+            f"We added up spend ({spend:,.0f}) and the share of each cut grade "
+            "on the chosen rows, independently of the search. Had those "
+            "numbers broken a rule, we would have thrown the mix out.",
+            "",
+            "## Where this could be wrong",
+            "",
+            "We modelled a sample, not every stone. A different sample, or "
+            "whole-stone purchases only, would move the mix. The per-grade "
+            "cap is the lever that matters most.",
+            "",
+            "## Assumptions",
+            "",
+            *[f"- {a}" for a in wb.assumptions()],
+        ]
+    )
     report = "\n".join(
         [
             "# Vault stocking recommendation",
@@ -270,10 +328,7 @@ def main() -> int:
         ]
     )
 
-    run_dir = paths.current_run()
-    if run_dir is not None:
-        (run_dir / "report.md").write_text(report, encoding="utf-8")
-        print(f"report: {run_dir / 'report.md'}")
+    paths.write_docs(report, walkthrough)
 
     print()
     print(report)

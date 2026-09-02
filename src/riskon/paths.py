@@ -125,3 +125,20 @@ def current_run() -> Path | None:
 def set_current_run(path: Path) -> None:
     runs_dir().mkdir(parents=True, exist_ok=True)
     (runs_dir() / ".current").write_text(str(path.resolve()), encoding="utf-8")
+
+
+def write_docs(report: str, walkthrough: str) -> Path | None:
+    """Write the two stakeholder files into the current run directory.
+
+    ``report.md`` is the decision; ``walkthrough.md`` is how the question
+    became a search. Publish will refuse to finish if the second file is
+    missing, so templates write both here rather than only the report.
+    """
+    run_dir = current_run()
+    if run_dir is None:
+        return None
+    (run_dir / "report.md").write_text(report, encoding="utf-8")
+    (run_dir / "walkthrough.md").write_text(walkthrough, encoding="utf-8")
+    print(f"report: {run_dir / 'report.md'}")
+    print(f"walkthrough: {run_dir / 'walkthrough.md'}")
+    return run_dir

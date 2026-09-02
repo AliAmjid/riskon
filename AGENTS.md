@@ -43,7 +43,7 @@ So:
 
 ## The pipeline
 
-Nine steps. Do them in order. Steps 3, 7 and 9 are not optional.
+Nine steps. Do them in order. Steps 3, 7, 8 and 9 are not optional.
 
 ```
 CSV + business question
@@ -54,7 +54,7 @@ CSV + business question
   5. Construct the model
   6. Solve
   7. Read and verify the result
-  8. Explain the recommendation
+  8. Explain: write report.md AND walkthrough.md    <- hard stop
   9. Publish the deliverables with riskon publish   <- hard stop
 ```
 
@@ -324,9 +324,13 @@ riskon sql "SELECT name, business_rule, bound, achieved, slack, binding FROM con
 
 ### 8. Explain the recommendation
 
-Write `report.md` in the run directory, aimed at someone who will never read
-the code and does not know what a solver is. Build it by querying the artifact,
-not from memory.
+Write `report.md` **and** `walkthrough.md` in the run directory. The report
+is the decision; the walkthrough is how you turned their question into a
+search. A run that ships only the report is unfinished — do not publish
+until both files exist. Build both by querying the artifact, not from memory.
+
+`report.md` is aimed at someone who will never read the code and does not
+know what a solver is.
 
 Required sections:
 
@@ -380,15 +384,21 @@ Required sections:
   plainly which came from them and which came from you.
 - **The rules we held to** - every constraint as a numbered sentence, and
   whether each one held in the end.
-- **How the choice was made** - in plain language, and this is the section
-  that earns the file. Say that the answer is the best one that exists under
-  their rules rather than a good one you found, say which rules the search
-  ran up against, and say what that means for them. Never name the solver,
-  the method or the model class here.
+- **How we turned your question into a search** - this is the section that
+  earns the file. Spell out the transfer in three sentences a colleague
+  could repeat: what is being chosen (take-or-leave each stone, how much of
+  each grade, who gets which trip), what "best" means (the single number we
+  aim at), and the rules that bound the search. Then say the answer is the
+  best combination that exists under those rules, not a shortlist you liked.
+  Never name the solver, the method or the model class.
 - **How we checked it** - the independent recount from step 7, as arithmetic
   they could redo themselves: what you added up and what you got. Say what
   you would have done had a recount disagreed.
 - **Where this could be wrong** - the honest limits, worst first.
+
+Do not fold the walkthrough into `report.md`. They answer different
+questions, and the stakeholder's "How we got here" tab only opens
+`walkthrough.md`.
 
 Alongside both files, tell them in chat what happens next: what to approve,
 buy or sign, and which answers from them would sharpen the number.

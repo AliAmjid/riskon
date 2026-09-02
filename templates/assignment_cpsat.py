@@ -273,6 +273,69 @@ def write_report(wb, solution: pd.DataFrame, assigned: pd.DataFrame, log: Constr
     return "\n".join(lines)
 
 
+def write_walkthrough(wb, solution: pd.DataFrame, assigned: pd.DataFrame, log: ConstraintLog,
+                      objective: float) -> str:
+    unserved = int((solution["selected"] == 0).sum())
+    rules = "\n".join(
+        f"{i}. {item.business_rule} — "
+        f"{'held, and this is the limit that stopped a better answer' if item.binding else 'held'}."
+        for i, item in enumerate(log.items, start=1)
+    )
+    return "\n".join(
+        [
+            "# How we got here",
+            "",
+            "## The question you asked",
+            "",
+            "Which driver should take which request this shift, so we capture "
+            "as much revenue as we can without double-booking anyone or "
+            "overloading a vehicle.",
+            "",
+            "## What we worked from",
+            "",
+            f"{len(solution)} requests in the shift window, and a driver pool "
+            "that is not in the file — its size and vehicle capacities are "
+            "numbers we had to pin down first.",
+            "",
+            "## What we had to pin down before we could start",
+            "",
+            "The file has the jobs, not the people. How many drivers you have, "
+            "and what each vehicle can carry, changes who can take what. Those "
+            "figures are in the assumption list below.",
+            "",
+            "## The rules we held to",
+            "",
+            rules,
+            "",
+            "## How we turned your question into a search",
+            "",
+            "For every request we chose a driver, or left it unserved. "
+            f'"Best" means the most revenue captured (this roster totals '
+            f"{objective:,.2f}). A driver cannot be in two places at once, "
+            "and a vehicle cannot take more passengers than it holds — those "
+            "are the walls of the search. The roster you have is the pairing "
+            "that scores highest inside those walls, not a shortlist we liked.",
+            "",
+            "## How we checked it",
+            "",
+            f"We counted the assigned trips, confirmed {unserved} requests "
+            "were left unserved, and re-checked that no driver holds two "
+            "overlapping jobs. Had a recount disagreed, we would have thrown "
+            "the roster out.",
+            "",
+            "## Where this could be wrong",
+            "",
+            "The driver pool is invented. More drivers would serve requests "
+            "that currently overlap an existing trip; fewer would leave more "
+            "unserved.",
+            "",
+            "## Assumptions",
+            "",
+            *([f"- {a}" for a in wb.assumptions()] or ["- None."]),
+        ]
+    )
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -308,10 +371,8 @@ def main() -> int:
     )
 
     report = write_report(wb, solution, assigned, log, objective)
-    run_dir = paths.current_run()
-    if run_dir is not None:
-        (run_dir / "report.md").write_text(report, encoding="utf-8")
-        print(f"report: {run_dir / 'report.md'}")
+    walkthrough = write_walkthrough(wb, solution, assigned, log, objective)
+    paths.write_docs(report, walkthrough)
 
     print()
     print(report)
