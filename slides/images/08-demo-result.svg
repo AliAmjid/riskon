@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="660" viewBox="0 0 1600 660" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <rect width="1600" height="660" fill="#ffffff"/>
+
+  <text x="80" y="62" font-size="26" font-weight="600" fill="#8a8f98" letter-spacing="2">VAULT STOCKING &#183; 53,940-ROW REGISTRY &#183; 150,000 CREDIT LINE</text>
+
+  <rect x="80" y="105" width="440" height="230" rx="16" fill="#EEFAF1" stroke="#3DA96A" stroke-width="3"/>
+  <text x="300" y="205" font-size="86" font-weight="700" fill="#2b8351" text-anchor="middle">78</text>
+  <text x="300" y="255" font-size="28" fill="#1f6b41" text-anchor="middle">stones to buy</text>
+  <text x="300" y="295" font-size="22" fill="#5a8f72" text-anchor="middle">spread across 5 cut grades</text>
+
+  <rect x="580" y="105" width="440" height="230" rx="16" fill="#EEFAF1" stroke="#3DA96A" stroke-width="3"/>
+  <text x="800" y="205" font-size="86" font-weight="700" fill="#2b8351" text-anchor="middle">123.71</text>
+  <text x="800" y="255" font-size="28" fill="#1f6b41" text-anchor="middle">carats acquired</text>
+  <text x="800" y="295" font-size="22" fill="#5a8f72" text-anchor="middle">1,213 per carat, proven best</text>
+
+  <rect x="1080" y="105" width="440" height="230" rx="16" fill="#EEF4FF" stroke="#4A7FD4" stroke-width="3"/>
+  <text x="1300" y="205" font-size="86" font-weight="700" fill="#24508f" text-anchor="middle">100%</text>
+  <text x="1300" y="255" font-size="28" fill="#24508f" text-anchor="middle">of the credit line used</text>
+  <text x="1300" y="295" font-size="22" fill="#6b8bc4" text-anchor="middle">nothing left on the table</text>
+
+  <rect x="80" y="390" width="1440" height="160" rx="16" fill="#FFF4E6" stroke="#E8A33D" stroke-width="3"/>
+  <text x="120" y="440" font-size="24" font-weight="600" fill="#8a5a12" letter-spacing="1.5">WHAT IS HOLDING YOU BACK</text>
+  <text x="120" y="486" font-size="30" fill="#1c2430">The credit line is spent to the last unit, and Ideal-cut has hit its 30% cap.</text>
+  <text x="120" y="524" font-size="30" fill="#1c2430">Lift either one and you buy more carats for the same money.</text>
+
+  <text x="80" y="600" font-size="21" fill="#8a8f98">Every figure re-checked against the raw data, independently of the solver.</text>
+  <text x="80" y="632" font-size="21" fill="#8a8f98">Modelled on a 240-stone stratified sample &#8212; declared in the report as an assumption, not hidden.</text>
+</svg>

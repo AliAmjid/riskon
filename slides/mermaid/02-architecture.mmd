@@ -1,0 +1,44 @@
+flowchart TB
+  subgraph HUMAN["ANALYST"]
+    direction LR
+    U1["Upload data<br/>Ask in plain English"]
+    U2["Answer 3 questions"]
+    U3["Read the<br/>recommendation"]
+  end
+
+  subgraph AGENT["AGENT — translates, never computes"]
+    direction LR
+    A1["Profile the data<br/>DuckDB"]
+    A2["Spot what<br/>is missing"]
+    A3["Write the model<br/>objective + constraints"]
+    A4["Explain in<br/>plain language"]
+  end
+
+  subgraph PROOF["SOLVER &amp; PROOF — computes, never guesses"]
+    direction LR
+    S1["OR-Tools / SciPy<br/>proves optimality"]
+    S2["Re-check every rule<br/>outside the solver"]
+    S3["Report · Decision · Rules<br/>Model · Full database"]
+  end
+
+  U1 --> A1
+  A1 --> A2
+  A2 -->|"stops and asks"| U2
+  U2 -->|"confirmed numbers"| A3
+  A3 --> S1
+  S1 --> S2
+  S2 --> A4
+  A4 --> S3
+  S3 --> U3
+
+  classDef human fill:#FFF4E6,stroke:#E8A33D,stroke-width:2px,color:#1c2430
+  classDef agent fill:#EEF4FF,stroke:#4A7FD4,stroke-width:2px,color:#1c2430
+  classDef proof fill:#EEFAF1,stroke:#3DA96A,stroke-width:2px,color:#1c2430
+
+  class U1,U2,U3 human
+  class A1,A2,A3,A4 agent
+  class S1,S2,S3 proof
+
+  style HUMAN fill:#FFFCF7,stroke:#E8A33D,stroke-width:2px,color:#8a5a12
+  style AGENT fill:#FAFCFF,stroke:#4A7FD4,stroke-width:2px,color:#24508f
+  style PROOF fill:#FAFEFB,stroke:#3DA96A,stroke-width:2px,color:#1f6b41

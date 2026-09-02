@@ -1,0 +1,32 @@
+flowchart LR
+  Q["A number the<br/>model needs<br/><br/>budget · capacity<br/>deadline · price"]
+  D{"Is it in<br/>your data?"}
+  ASK["Ask the<br/>stakeholder"]
+
+  F["FACT<br/>read from your file"]
+  C["CONFIRMED<br/>you answered"]
+  DE["DECLINED<br/>you said 'you decide'<br/>our default, flagged"]
+  G["GUESSED<br/>nobody answered<br/>flagged in the report"]
+
+  R["Recommendation<br/><br/>every number colour-coded"]
+
+  Q --> D
+  D -->|yes| F
+  D -->|no| ASK
+  ASK --> C
+  ASK --> DE
+  ASK --> G
+  F --> R
+  C --> R
+  DE --> R
+  G --> R
+
+  classDef neutral fill:#F1F3F6,stroke:#8a8f98,stroke-width:2px,color:#3a4250
+  classDef good fill:#EEFAF1,stroke:#3DA96A,stroke-width:2px,color:#1f6b41
+  classDef warn fill:#FFF6E0,stroke:#E8A33D,stroke-width:2px,color:#8a5a12
+  classDef bad fill:#FFE6E6,stroke:#D24A4A,stroke-width:2px,color:#8a2b2b
+
+  class Q,D,ASK,R neutral
+  class F,C good
+  class DE warn
+  class G bad

@@ -1,0 +1,22 @@
+flowchart LR
+  RUN["One run"]
+
+  R1["report.md<br/>the recommendation,<br/>in plain language"]
+  R2["decision.csv<br/>what to do,<br/>one row per choice"]
+  R3["constraints.csv<br/>every rule: allowed,<br/>used, verdict"]
+  R4["model.py<br/>exactly what<br/>was solved"]
+  R5["workbench.duckdb<br/>every row, every query,<br/>re-runnable"]
+
+  RUN --> R1
+  RUN --> R2
+  RUN --> R3
+  RUN --> R4
+  RUN --> R5
+
+  classDef run fill:#FFF4E6,stroke:#E8A33D,stroke-width:3px,color:#8a5a12
+  classDef out fill:#EEFAF1,stroke:#3DA96A,stroke-width:2px,color:#1f6b41
+  classDef audit fill:#F1F3F6,stroke:#8a8f98,stroke-width:2px,color:#3a4250
+
+  class RUN run
+  class R1,R2,R3 out
+  class R4,R5 audit

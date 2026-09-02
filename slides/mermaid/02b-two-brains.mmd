@@ -1,0 +1,21 @@
+flowchart LR
+  Q["Business question<br/>in plain English"]
+
+  L["LANGUAGE MODEL<br/><br/>Reads the data<br/>Writes the model<br/>Explains the answer<br/><br/>TRANSLATES,<br/>NEVER COMPUTES"]
+
+  S["OPTIMISATION SOLVER<br/><br/>OR-Tools · SciPy<br/>Proves the optimum<br/>Or proves it is impossible<br/><br/>COMPUTES,<br/>NEVER GUESSES"]
+
+  R["Optimal decision<br/>+ the evidence"]
+
+  Q --> L
+  L -->|"model.py"| S
+  S -->|"proven result"| L
+  L --> R
+
+  classDef q fill:#FFF4E6,stroke:#E8A33D,stroke-width:2px,color:#1c2430
+  classDef llm fill:#EEF4FF,stroke:#4A7FD4,stroke-width:3px,color:#1c2430
+  classDef solv fill:#EEFAF1,stroke:#3DA96A,stroke-width:3px,color:#1c2430
+
+  class Q,R q
+  class L llm
+  class S solv

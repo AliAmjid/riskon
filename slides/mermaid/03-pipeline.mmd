@@ -1,0 +1,18 @@
+flowchart LR
+  P1["1<br/>Inspect<br/>the data"]
+  P2["2<br/>Frame the<br/>problem"]
+  P3["3<br/>ASK THE<br/>STAKEHOLDER"]
+  P4["4<br/>Pick the<br/>solver"]
+  P5["5<br/>Build the<br/>model"]
+  P6["6<br/>Solve"]
+  P7["7<br/>VERIFY<br/>INDEPENDENTLY"]
+  P8["8<br/>Explain"]
+  P9["9<br/>Publish"]
+
+  P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9
+
+  classDef step fill:#F1F3F6,stroke:#8a8f98,stroke-width:2px,color:#3a4250
+  classDef stop fill:#FFE6E6,stroke:#D24A4A,stroke-width:3px,color:#8a2b2b
+
+  class P1,P2,P4,P5,P6,P8,P9 step
+  class P3,P7 stop

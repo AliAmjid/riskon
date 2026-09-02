@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph BUS["What the business asks"]
+    direction TB
+    B1["Which clients get<br/>the credit line?"]
+    B2["Who works<br/>Saturday night?"]
+    B3["What do we stock,<br/>and how much?"]
+  end
+
+  WALL["needs an OR specialist<br/><br/>days of consulting<br/>scoping, modelling, review"]
+
+  subgraph MATH["What actually solves it"]
+    direction TB
+    M1["maximise cᵀx<br/>subject to Ax ≤ b<br/>x ∈ {0,1}ⁿ"]
+  end
+
+  B1 --> WALL
+  B2 --> WALL
+  B3 --> WALL
+  WALL --> M1
+
+  classDef biz fill:#FFF4E6,stroke:#E8A33D,stroke-width:2px,color:#1c2430
+  classDef wall fill:#FFE6E6,stroke:#D24A4A,stroke-width:3px,stroke-dasharray:6 4,color:#8a2b2b
+  classDef math fill:#F1F3F6,stroke:#8a8f98,stroke-width:2px,color:#3a4250
+
+  class B1,B2,B3 biz
+  class WALL wall
+  class M1 math
+
+  style BUS fill:#ffffff,stroke:#E8A33D,stroke-width:2px,color:#8a5a12
+  style MATH fill:#ffffff,stroke:#8a8f98,stroke-width:2px,color:#3a4250

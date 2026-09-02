@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <rect width="1600" height="620" fill="#ffffff"/>
+
+  <text x="80" y="55" font-size="26" font-weight="600" fill="#8a8f98" letter-spacing="2">TIME TO A DEFENSIBLE DECISION</text>
+
+  <text x="80" y="120" font-size="34" font-weight="600" fill="#3a4250">Traditional OR engagement</text>
+  <rect x="80" y="150" width="1240" height="88" rx="10" fill="#FFE6E6" stroke="#D24A4A" stroke-width="3"/>
+  <text x="1350" y="207" font-size="42" font-weight="700" fill="#D24A4A">3&#8211;10 days</text>
+
+  <line x1="393" y1="150" x2="393" y2="238" stroke="#D24A4A" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.55"/>
+  <line x1="947" y1="150" x2="947" y2="238" stroke="#D24A4A" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.55"/>
+  <text x="236" y="202" font-size="24" fill="#8a2b2b" text-anchor="middle">scoping calls</text>
+  <text x="670" y="202" font-size="24" fill="#8a2b2b" text-anchor="middle">specialist modelling</text>
+  <text x="1133" y="202" font-size="24" fill="#8a2b2b" text-anchor="middle">review cycle</text>
+
+  <text x="80" y="360" font-size="34" font-weight="600" fill="#3a4250">RiskSense AI</text>
+  <rect x="80" y="390" width="24" height="88" rx="8" fill="#3DA96A" stroke="#2b8351" stroke-width="3"/>
+  <text x="140" y="447" font-size="42" font-weight="700" fill="#2b8351">~4 minutes</text>
+  <text x="410" y="446" font-size="26" fill="#5a6270">upload &#183; ask &#183; answer 3 questions &#183; decide</text>
+
+  <line x1="80" y1="530" x2="1320" y2="530" stroke="#c3c9d2" stroke-width="2"/>
+  <text x="80" y="570" font-size="22" fill="#8a8f98">0</text>
+  <text x="1320" y="570" font-size="22" fill="#8a8f98" text-anchor="end">same question, same data, same answer quality</text>
+</svg>

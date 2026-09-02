@@ -1,0 +1,14 @@
+flowchart LR
+  N["NOW — MVP, working<br/><br/>Ingest any dataset<br/>Formulate and solve<br/>Verify and explain<br/>Publish the evidence"]
+  M["3–6 MONTHS<br/><br/>2–3 pilot clients<br/>Nonlinear + stochastic<br/>Industry templates"]
+  L["6–12 MONTHS<br/><br/>Cloud API<br/>Excel and BI plugins<br/>Multi-tenant, audited"]
+
+  N --> M --> L
+
+  classDef now fill:#EEFAF1,stroke:#3DA96A,stroke-width:3px,color:#1f6b41
+  classDef mid fill:#EEF4FF,stroke:#4A7FD4,stroke-width:2px,color:#24508f
+  classDef far fill:#F5F0FF,stroke:#8A6FD4,stroke-width:2px,color:#4c3a8a
+
+  class N now
+  class M mid
+  class L far
