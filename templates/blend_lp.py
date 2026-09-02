@@ -231,11 +231,6 @@ def main() -> int:
     )
 
     spend = float(held["spend"].sum())
-    rules = "\n".join(
-        f"{i}. {item.business_rule} — "
-        f"{'held, and this is the limit that stopped a better answer' if item.binding else 'held'}."
-        for i, item in enumerate(log.items, start=1)
-    )
     walkthrough = "\n".join(
         [
             "# How we got here",
@@ -246,31 +241,12 @@ def main() -> int:
             "bring in as many carats as possible, without letting any one cut "
             "grade take over the tray.",
             "",
-            "## What we worked from",
-            "",
-            f"A sample of the registry — {len(held)} stones in the mix, drawn "
-            "evenly across cut grades so the diversification rule has "
-            "something to push against. The full listing is a market catalogue, "
-            "not a purchase menu.",
-            "",
-            "## What we had to pin down before we could start",
-            "",
-            f"The credit line ({CREDIT_LINE:,.0f}), the cap that no cut grade "
-            f"may take more than {MAX_CATEGORY_SHARE:.0%} of spend, and that "
-            "we can take a fraction of a listing to mean 'roughly this much "
-            "of this grade'.",
-            "",
-            "## The rules we held to",
-            "",
-            rules,
-            "",
             "## How we turned your question into a search",
             "",
             "For every stone we chose how much of it to take — including none. "
             f'"Best" means the most carats for the money (this mix totals '
             f"{objective:,.2f} carats). The credit line and the per-grade cap "
-            "are the walls of the search. The mix you have is the one that "
-            "scores highest inside those walls, not a shortlist we preferred.",
+            "are the walls of the search.",
             "",
             "## How we checked it",
             "",
@@ -281,12 +257,7 @@ def main() -> int:
             "## Where this could be wrong",
             "",
             "We modelled a sample, not every stone. A different sample, or "
-            "whole-stone purchases only, would move the mix. The per-grade "
-            "cap is the lever that matters most.",
-            "",
-            "## Assumptions",
-            "",
-            *[f"- {a}" for a in wb.assumptions()],
+            "whole-stone purchases only, would move the mix.",
         ]
     )
     report = "\n".join(

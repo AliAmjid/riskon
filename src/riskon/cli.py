@@ -306,7 +306,7 @@ def cmd_publish(run: str | None, into: str | None) -> int:
             "\nwalkthrough.md is missing. The report says what to do; the "
             "walkthrough says how you turned the question into a search, and "
             "the stakeholder's 'How we got here' tab is empty without it. "
-            "Write it (see step 8) and run riskon publish again.",
+            "Write it (see step 4) and run riskon publish again.",
             file=sys.stderr,
         )
 

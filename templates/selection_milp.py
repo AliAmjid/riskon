@@ -318,11 +318,6 @@ def write_report(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float)
 
 
 def write_walkthrough(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float) -> str:
-    rules = "\n".join(
-        f"{i}. {item.business_rule} — "
-        f"{'held, and this is the limit that stopped a better answer' if item.binding else 'held'}."
-        for i, item in enumerate(log.items, start=1)
-    )
     return "\n".join(
         [
             "# How we got here",
@@ -333,46 +328,25 @@ def write_walkthrough(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: f
             "powerful as it can be, without overspending or missing the "
             "efficiency and mix rules.",
             "",
-            "## What we worked from",
-            "",
-            f"The catalogue, narrowed to the vehicles that list engine power. "
-            f"We are recommending {len(chosen)} of them.",
-            "",
-            "## What we had to pin down before we could start",
-            "",
-            "The file has no purchase price. We treated weight times 8 as the "
-            "unit cost and recorded that as a guess. The budget, the 25 mpg "
-            "floor, the origin cap and the ten-vehicle ceiling are the numbers "
-            "this answer rests on.",
-            "",
-            "## The rules we held to",
-            "",
-            rules,
-            "",
             "## How we turned your question into a search",
             "",
             "For every vehicle we asked a yes-or-no: take it or leave it. "
             f'"Best" means the most combined engine power '
-            f"(this mix totals {objective:,.0f}). The rules above are the walls "
-            "of the search — any mix that breaks one is discarded. The list "
-            "you have is the mix that scores highest inside those walls, not "
-            "a shortlist we preferred.",
+            f"(this mix totals {objective:,.0f}). Spend, fuel economy and origin "
+            "mix are the walls of the search. The list you have is the mix that "
+            "scores highest inside those walls, not a shortlist we preferred.",
             "",
             "## How we checked it",
             "",
             "We added up spend, average mpg and origin shares on the chosen "
             "rows from the original catalogue, independently of the search. "
             "Had those numbers broken a rule, we would have thrown the answer "
-            "out and diagnosed the model.",
+            "out.",
             "",
             "## Where this could be wrong",
             "",
             "The price is invented from weight. If real quotes come in higher, "
             "the budget binds sooner and the fleet shrinks.",
-            "",
-            "## Assumptions",
-            "",
-            *([f"- {a}" for a in wb.assumptions()] or ["- None."]),
         ]
     )
 
@@ -393,7 +367,7 @@ def main() -> int:
     if solution is None:
         wb.record(constraints=log, status=status, runtime_seconds=runtime)
         print("\nINFEASIBLE. Drop constraints one at a time to find the conflict;")
-        print("do not simply loosen a bound. See AGENTS.md step 5.")
+        print("do not simply loosen a bound. See AGENTS.md step 3.")
         wb.close()
         return 1
 

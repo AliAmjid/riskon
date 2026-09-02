@@ -13,17 +13,13 @@ orientation for humans. The problem statement this was built against is in
 ```
 CSV + business question
   1. Inspect the data          riskon load <file|url>
-  2. Understand the problem    decisions / objective / constraints, in words
-  3. Ask about what's missing  hard stop: no modelling on invented numbers
-  4. Choose the tool           riskon solvers
-  5. Construct the model       runs/<id>/model.py
-  6. Solve                     python3 model.py
-  7. Read and verify           independent pandas re-check vs source
-  8. Explain                   runs/<id>/report.md and walkthrough.md
-  9. Publish                   riskon publish
+  2. Ask about what's missing  hard stop: no modelling on invented numbers
+  3. Model, solve, and check   runs/<id>/model.py
+  4. Explain                   report.md and walkthrough.md
+  5. Publish                   riskon publish
 ```
 
-Steps 3, 8 and 9 are the ones that are cheap to skip and expensive to have skipped.
+Steps 2, 4 and 5 are the ones that are cheap to skip and expensive to have skipped.
 A model built on numbers nobody confirmed answers a question nobody asked, a
 report without a walkthrough is a number the stakeholder has to take on faith,
 and a file left in `runs/` is a file they never receive.
@@ -31,10 +27,8 @@ and a file left in `runs/` is a file they never receive.
 ## Quick start
 
 ```bash
-riskon doctor                                   # is the stack alive?
 riskon new fleet --template selection_milp      # scaffold a run
 riskon load data/mpg.csv                        # any format -> canonical table
-riskon sql "SELECT origin, count(*) FROM source GROUP BY 1"
 python3 runs/*fleet/model.py                    # solve, verify, report
 riskon publish                                  # hand the deliverables over
 ```

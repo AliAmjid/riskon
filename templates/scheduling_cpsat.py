@@ -265,11 +265,6 @@ def main() -> int:
         .rename(columns={"worker": "Worker", "shifts_worked": "Shifts", "hours": "Hours"})
     )
 
-    rules = "\n".join(
-        f"{i}. {item.business_rule} — "
-        f"{'held, and this is the limit that stopped a better answer' if item.binding else 'held'}."
-        for i, item in enumerate(log.items, start=1)
-    )
     walkthrough = "\n".join(
         [
             "# How we got here",
@@ -279,29 +274,12 @@ def main() -> int:
             "Who should work which shift so every shift is covered at the "
             "lowest staffing cost, without burning people out.",
             "",
-            "## What we worked from",
-            "",
-            f"{len(shifts)} shifts and a worker pool we constructed for this "
-            "demonstration — none of the bundled files is a staffing roster.",
-            "",
-            "## What we had to pin down before we could start",
-            "",
-            "How many people you have, how many shifts each may take, and how "
-            "much rest they need between them. Those figures are in the "
-            "assumption list below.",
-            "",
-            "## The rules we held to",
-            "",
-            rules,
-            "",
             "## How we turned your question into a search",
             "",
             "For every worker and every shift we asked a yes-or-no: roster "
             f'them or don\'t. "Best" means the lowest total cost (this roster '
             f"costs {objective:,.0f}). Coverage, no double-booking, the per-"
-            "person cap and the rest rule are the walls of the search. The "
-            "roster you have is the cheapest one that still covers every "
-            "shift, not a rota we preferred.",
+            "person cap and the rest rule are the walls of the search.",
             "",
             "## How we checked it",
             "",
@@ -313,10 +291,6 @@ def main() -> int:
             "",
             "The worker pool and rest rule are invented. Fewer people, or "
             "more rest, would raise the cost or leave a shift uncovered.",
-            "",
-            "## Assumptions",
-            "",
-            *[f"- {a}" for a in wb.assumptions()],
         ]
     )
     report = "\n".join(
