@@ -5,7 +5,8 @@ and a dataset; it returns a decision, the evidence that the decision is correct,
 and an explanation a non-technical stakeholder can act on.
 
 **The agent's instructions live in [AGENTS.md](AGENTS.md).** This file is
-orientation for humans.
+orientation for humans. The problem statement this was built against is in
+[docs/BRIEF.md](docs/BRIEF.md).
 
 ## The pipeline
 
@@ -13,12 +14,18 @@ orientation for humans.
 CSV + business question
   1. Inspect the data          riskon load <file|url>
   2. Understand the problem    decisions / objective / constraints, in words
-  3. Choose the tool           riskon solvers
-  4. Construct the model       runs/<id>/model.py
-  5. Solve                     python3 model.py
-  6. Read and verify           independent pandas re-check vs source
-  7. Explain                   runs/<id>/report.md
+  3. Ask about what's missing  hard stop: no modelling on invented numbers
+  4. Choose the tool           riskon solvers
+  5. Construct the model       runs/<id>/model.py
+  6. Solve                     python3 model.py
+  7. Read and verify           independent pandas re-check vs source
+  8. Explain                   runs/<id>/report.md
+  9. Publish                   riskon publish
 ```
+
+Steps 3 and 9 are the two that are cheap to skip and expensive to have skipped.
+A model built on numbers nobody confirmed answers a question nobody asked, and
+a report left in `runs/` is a report the stakeholder never receives.
 
 ## Quick start
 
@@ -28,6 +35,7 @@ riskon new fleet --template selection_milp      # scaffold a run
 riskon load data/mpg.csv                        # any format -> canonical table
 riskon sql "SELECT origin, count(*) FROM source GROUP BY 1"
 python3 runs/*fleet/model.py                    # solve, verify, report
+riskon publish                                  # hand the deliverables over
 ```
 
 ## One canonical format
