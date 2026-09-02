@@ -355,7 +355,42 @@ Then re-read the whole thing as the stakeholder. Every sentence they could not
 explain back to a colleague gets rewritten or deleted. Tables use business
 names; `row_id` is plumbing, not a finding.
 
-Alongside the report, tell them in chat what happens next: what to approve,
+#### Also write `walkthrough.md`
+
+The report says what to do. It does not say how you got there, and a
+stakeholder who cannot see that has to either take the number on faith or
+ignore it. So write a second file, `walkthrough.md`, in the run directory:
+the reasoning start to finish, for the same non-technical reader.
+
+This is the one file where you explain your working. It is not a summary of
+the report and it is not the report with more words - it is the story of the
+decision, and it is the strictest file in the repo about language. If a
+sentence in it would need a footnote, rewrite the sentence.
+
+Required sections:
+
+- **The question you asked** - their question back to them, sharpened. This is
+  where they find out whether you understood them, so it is worth getting
+  exactly right.
+- **What we worked from** - the file, the row count, what you dropped and why.
+  "Six of them do not list an engine size, so there is no way to judge what
+  you would be getting; we set those aside."
+- **What we had to pin down before we could start** - each number that was
+  not in the data, where it came from, and what changes if it is wrong. Say
+  plainly which came from them and which came from you.
+- **The rules we held to** - every constraint as a numbered sentence, and
+  whether each one held in the end.
+- **How the choice was made** - in plain language, and this is the section
+  that earns the file. Say that the answer is the best one that exists under
+  their rules rather than a good one you found, say which rules the search
+  ran up against, and say what that means for them. Never name the solver,
+  the method or the model class here.
+- **How we checked it** - the independent recount from step 7, as arithmetic
+  they could redo themselves: what you added up and what you got. Say what
+  you would have done had a recount disagreed.
+- **Where this could be wrong** - the honest limits, worst first.
+
+Alongside both files, tell them in chat what happens next: what to approve,
 buy or sign, and which answers from them would sharpen the number.
 
 ### 9. Publish the deliverables
@@ -369,11 +404,37 @@ trail.
 riskon publish
 ```
 
-That copies the current run's `report.md`, `model.py` and `workbench.duckdb`
-into the store, plus a CSV of the decision and one of the constraints so the
-stakeholder can open the answer in a spreadsheet without a DuckDB client. It
+That copies the current run's `report.md`, `walkthrough.md`, `model.py` and
+`workbench.duckdb` into the store, plus a CSV of the decision and one of the
+constraints so the stakeholder can open the answer in a spreadsheet without a
+DuckDB client, and a `summary.json` of the headline figures and the ledger. It
 prints the destination and what it wrote; check that list is not empty before
-you finish.
+you finish, and check `walkthrough.md` is on it rather than in the "absent"
+line.
+
+`decision.csv` holds the rows that *are* the decision, not the candidate set
+it was chosen from: publish filters `solution` on `selected` or `quantity`.
+That filter is the only reason the file matches its own description, so if
+your model records the decision under some other column name, either add one
+of those two or say so in the report.
+
+`summary.json` is read by the app that shows the stakeholder their result, and
+it is built from `meta`. Two keys are worth setting deliberately when you
+record the solve, because nothing else can infer them:
+
+```python
+wb.record(
+    solution=solution,
+    constraints=log,
+    status="OPTIMAL",
+    objective=obj,
+    objective_label="cumulative horsepower across the fleet",
+)
+```
+
+`objective_label` is what the objective *means*, in the stakeholder's words.
+Without it the headline figure appears with no unit, which is exactly the
+failure this playbook spends a page warning about.
 
 **Do not write deliverables by hand.** `riskon publish` resolves where the
 store actually is, and it is not `<repo>/artifacts` when you are running in the
@@ -387,8 +448,10 @@ The result is:
 ```
 <the artifacts store>
   report.md          the recommendation, and the file to read first
+  walkthrough.md     how you got there, for the reader who wants the reasoning
   decision.csv       what to do, one row per choice
   constraints.csv    every rule, with what it allowed and what you used
+  summary.json       the headline figures and the assumption ledger
   model.py           the formulation
   workbench.duckdb   the full artifact, for whoever audits the work
 ```
@@ -446,13 +509,14 @@ summarised in plain language in "What I had to guess".
 
 ### The artifact
 
-Each run directory holds exactly three things:
+Each run directory holds exactly four things:
 
 ```
 runs/<timestamp>-<slug>/
   workbench.duckdb   the artifact
   model.py           the formulation
   report.md          the recommendation
+  walkthrough.md     how you got there
 ```
 
 `workbench.duckdb` holds five tables:

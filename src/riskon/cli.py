@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -185,11 +186,62 @@ def cmd_export(run: str | None, fmt: str, into: str | None) -> int:
     return 0
 
 
-# The three files a run always produces, and the tables worth handing over as
-# spreadsheets. `source` and `candidates` are deliberately absent: they are
-# inputs, they can be huge, and workbench.duckdb already carries them.
-_PUBLISH_FILES = ("report.md", "model.py", "workbench.duckdb")
+# The files a run produces, and the tables worth handing over as spreadsheets.
+# `source` and `candidates` are deliberately absent: they are inputs, they can
+# be huge, and workbench.duckdb already carries them.
+_PUBLISH_FILES = ("report.md", "walkthrough.md", "model.py", "workbench.duckdb")
 _PUBLISH_TABLES = {"solution": "decision.csv", "constraints": "constraints.csv"}
+
+# Meta keys worth handing over as machine-readable figures, and the type to
+# read each one back as. Everything in `meta` is stored as a string.
+_SUMMARY_NUMBERS = ("objective", "runtime_seconds")
+_SUMMARY_INTS = ("source_rows", "candidates_rows")
+_SUMMARY_STRINGS = ("slug", "model", "status", "solver", "objective_label")
+
+
+def _decision_filter(columns: list[str]) -> str:
+    """
+    Narrow `solution` to the rows that are actually the decision.
+
+    The solution table carries a row per candidate, so a ten-vehicle answer
+    lands in it as ten chosen rows and 382 rejected ones. decision.csv is
+    documented as "one row per choice", and a stakeholder opening 392 rows in
+    a spreadsheet has been handed the candidate list, not the answer.
+    """
+    lower = {name.lower(): name for name in columns}
+    if "selected" in lower:
+        return f'WHERE CAST("{lower["selected"]}" AS INTEGER) <> 0'
+    if "quantity" in lower:
+        return f'WHERE "{lower["quantity"]}" > 0'
+    return ""
+
+
+def _write_summary(wb, destination: Path) -> Path:
+    """The headline figures and the assumption ledger, as JSON."""
+    meta = wb.all_meta()
+    summary: dict[str, object] = {}
+
+    for key in _SUMMARY_STRINGS:
+        if meta.get(key):
+            summary[key] = meta[key]
+
+    for key in _SUMMARY_NUMBERS:
+        try:
+            summary[key] = float(meta[key])
+        except (KeyError, TypeError, ValueError):
+            pass
+
+    for key in _SUMMARY_INTS:
+        try:
+            summary[key] = int(float(meta[key]))
+        except (KeyError, TypeError, ValueError):
+            pass
+
+    summary["assumptions"] = wb.assumptions()
+
+    target = destination / "summary.json"
+    target.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return target
 
 
 def cmd_publish(run: str | None, into: str | None) -> int:
@@ -216,19 +268,44 @@ def cmd_publish(run: str | None, into: str | None) -> int:
                 if not wb.has_table(table):
                     missing.append(f"{table} table")
                     continue
-                frame = wb.sql(f"SELECT * FROM {table}")
+
+                where = _decision_filter(wb.columns(table)) if table == "solution" else ""
+                frame = wb.sql(f"SELECT * FROM {table} {where}")
+                if frame.empty and where:
+                    # Better a candidate list than an empty file, but say so:
+                    # an empty decision usually means the filter or the solve
+                    # is wrong, and silence would hide it.
+                    print(
+                        f"warning: no rows in {table} matched {where}; "
+                        "publishing the whole table instead",
+                        file=sys.stderr,
+                    )
+                    frame = wb.sql(f"SELECT * FROM {table}")
                 if frame.empty:
                     missing.append(f"{table} table (empty)")
                     continue
+
                 target = destination / filename
                 frame.to_csv(target, index=False)
                 written.append(target)
+
+            written.append(_write_summary(wb, destination))
 
     for path in written:
         print(f"{path.stat().st_size:>10,} B  {path}")
 
     if missing:
         print(f"\nnot published (absent): {', '.join(missing)}", file=sys.stderr)
+
+    if "walkthrough.md" in missing:
+        # Step 8 requires it and the templates do not write it, so the reminder
+        # has to come from here or it gets forgotten every run.
+        print(
+            "\nwalkthrough.md is missing. The report says what to do; the "
+            "walkthrough says how you got there, and the stakeholder gets no "
+            "reasoning without it. See step 8.",
+            file=sys.stderr,
+        )
 
     if not written:
         print(
