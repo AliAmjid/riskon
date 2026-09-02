@@ -14,8 +14,9 @@ CONSTRAINTS
 
 ----------------------------------------------------------------------------
 This is a TEMPLATE. Unlike the other three it builds its own demonstration
-roster, because none of the bundled datasets is a staffing problem. Replace
-`build_candidates` with a query over your real shift table; keep the shape.
+roster, because none of the bundled datasets is a staffing problem. Every demo
+number is recorded as GUESSED. Replace `build_candidates` with a query over
+your real shift table; keep the shape.
 """
 
 from __future__ import annotations
@@ -71,8 +72,20 @@ def build_candidates(wb) -> pd.DataFrame:
         wb.load(frame, table="source")
 
     wb.add_assumption(
-        f"Roster generated for demonstration: {DAYS} days x {len(SHIFTS_PER_DAY)} "
-        f"shifts, {N_WORKERS} interchangeable workers at {HOURLY_COST:g}/hour."
+        f"GUESSED: roster generated for demonstration: {DAYS} days x "
+        f"{len(SHIFTS_PER_DAY)} shifts starting {PERIOD_START:%Y-%m-%d}."
+    )
+    wb.add_assumption(
+        f"GUESSED: assumed {N_WORKERS} interchangeable workers at "
+        f"{HOURLY_COST:g} currency units per hour."
+    )
+    wb.add_assumption(
+        f"GUESSED: no worker may take more than {MAX_SHIFTS_PER_WORKER} shifts "
+        "in the planning period."
+    )
+    wb.add_assumption(
+        f"GUESSED: each worker needs at least {MIN_REST_HOURS} hours off "
+        "between shifts."
     )
 
     return wb.materialize(
@@ -264,6 +277,19 @@ def main() -> int:
         .reset_index()
         .rename(columns={"worker": "Worker", "shifts_worked": "Shifts", "hours": "Hours"})
     )
+    limit_check = log.to_frame().assign(
+        status=lambda d: d["satisfied"].map({True: "Met", False: "Missed"}).fillna(
+            "Not checked"
+        )
+    )[["business_rule", "bound", "achieved", "status"]].rename(
+        columns={
+            "business_rule": "Rule",
+            "bound": "Limit",
+            "achieved": "Actual",
+            "status": "Status",
+        }
+    )
+    guesses = [a for a in wb.assumptions() if not a.startswith("CONFIRMED:")]
 
     report = "\n".join(
         [
@@ -271,9 +297,16 @@ def main() -> int:
             "",
             "## Recommendation",
             "",
-            f"Roster **{len(solution)} worker-shifts** across "
+            f"Using the demo staffing assumptions listed below, roster "
+            f"**{len(solution)} worker-shifts** across "
             f"{solution['worker'].nunique()} workers at a total cost of "
-            f"**{objective:,.0f}**, covering every shift.",
+            f"**{objective:,.0f} currency units**, covering every shift.",
+            "",
+            "## What this achieves",
+            "",
+            f"- Covered shifts: **{len(coverage)}**",
+            f"- Scheduled worker-shifts: **{len(solution)}**",
+            f"- Total labour cost: **{objective:,.0f} currency units**",
             "",
             "## The decision",
             "",
@@ -285,12 +318,25 @@ def main() -> int:
                 columns={"shift": "Shift", "required": "Required", "staffed": "Staffed"}
             )),
             "",
-            "## Constraint check",
+            "## Why these and not others",
             "",
-            md_table(
-                log.to_frame()[["business_rule", "sense", "bound", "achieved", "satisfied"]]
-                .rename(columns={"business_rule": "Rule"})
-            ),
+            "The roster uses the lowest-cost coverage that still respects the "
+            "workload and rest rules. The limits with no room left are the ones "
+            "that stop a cheaper roster.",
+            "",
+            "## What would change the answer",
+            "",
+            "Changing required headcount, available workers, rest time, maximum "
+            "shifts per worker, or hourly cost can move the roster. Rules that "
+            "still have room left are unlikely to change the decision.",
+            "",
+            "## How the limits checked out",
+            "",
+            md_table(limit_check),
+            "",
+            "## What I had to guess",
+            "",
+            *([f"- {a}" for a in guesses] or ["- None. The stakeholder confirmed every input."]),
             "",
             "## Assumptions",
             "",

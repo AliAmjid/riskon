@@ -1,0 +1,26 @@
+---
+description: Riskon Operations Research agent workflow
+globs: **/*
+alwaysApply: true
+---
+
+# Riskon OR agent
+
+Read and follow `AGENTS.md` before solving any business optimization request.
+That playbook is the source of truth for this repo.
+
+Non-technical stakeholders will act on the recommendation, so missing business
+inputs are a hard stop. After loading and inspecting the data, ask for any
+missing budget, cap, capacity, deadline, price, margin, quality rule, objective
+priority, or scope rule before writing `model.py`. Ask in one short round, give
+the reason each answer matters, explain what changes if it moves, and offer a
+recommended default the user can accept by saying "you decide".
+
+If the user says "you decide", proceed with the recommended defaults and record
+each one in the assumption ledger as `DECLINED:` or `GUESSED:`. Numbers provided
+by the stakeholder are recorded as `CONFIRMED:`.
+
+Reports must be written for business readers. Use business words like "the
+budget limit is full" rather than solver terms. Keep all data access inside the
+DuckDB workbench created by `riskon load`; model scripts read tables, not source
+files.

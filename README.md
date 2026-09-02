@@ -13,13 +13,20 @@ orientation for humans. The problem statement this was built against is in
 ```
 CSV + business question
   1. Inspect the data          riskon load <file|url>
-  2. Understand the problem    decisions / objective / constraints, in words
-  3. Choose the tool           riskon solvers
-  4. Construct the model       runs/<id>/model.py
-  5. Solve                     python3 model.py
-  6. Read and verify           independent pandas re-check vs source
-  7. Explain                   runs/<id>/report.md
+  2. Understand the problem    decisions / objective / rules / unknowns
+  3. Ask for missing inputs    hard stop before modelling
+  4. Choose the tool           riskon solvers
+  5. Construct the model       runs/<id>/model.py
+  6. Solve                     python3 model.py
+  7. Read and verify           independent pandas re-check vs source
+  8. Explain                   runs/<id>/report.md
 ```
+
+Step 3 is the product behavior that matters most for non-technical users. If a
+budget, capacity, deadline, price, margin, quality rule, or objective priority
+is missing, the agent asks for it before solving. If the user replies
+`you decide`, the agent may continue with recommended defaults, but every one
+is labelled in the assumption ledger and in the recommendation.
 
 ## Quick start
 
@@ -70,6 +77,10 @@ re-queried, or several can be `ATTACH`ed side by side to compare scenarios.
 The `constraints` table is the interesting one: every mathematical constraint
 carries the plain-language business rule it encodes, so the translation from
 English to mathematics is auditable without reading the model code.
+
+The `assumptions` entry in `meta` is the guardrail for incomplete data. Each
+line is prefixed as `CONFIRMED:`, `DECLINED:`, or `GUESSED:` so a stakeholder can
+see which headline numbers came from them and which ones still need approval.
 
 ## What's installed
 

@@ -13,9 +13,9 @@ CONSTRAINTS
     3. Per-asset holdings are capped at MAX_UNITS_PER_ASSET.
 
 ----------------------------------------------------------------------------
-This is a TEMPLATE. It runs as-is against data/diamonds.csv. Uses HiGHS through
-scipy.optimize.linprog, which is the fastest path when nothing is integral.
-If the real problem needs whole units, switch to selection_milp instead.
+This is a TEMPLATE. It runs as-is against data/diamonds.csv. Every demo number
+is recorded as GUESSED. If the real problem needs whole units, switch to
+selection_milp instead.
 """
 
 from __future__ import annotations
@@ -54,12 +54,24 @@ def build_candidates(wb) -> pd.DataFrame:
         wb.load(DEFAULT_SOURCE)
 
     wb.add_assumption(
-        f"Modelled a stratified sample of {SAMPLE_SIZE} stones rather than all "
-        f"53,940; the full registry is a market listing, not a purchase menu."
+        f"GUESSED: credit line set to {CREDIT_LINE:,.0f} currency units for "
+        "the demo; replace with the stakeholder's approved buying limit."
     )
     wb.add_assumption(
-        "Holdings are continuous, so a fractional quantity means 'buy roughly "
-        "this much of this grade', not a fraction of one stone."
+        f"GUESSED: no cut grade may exceed {MAX_CATEGORY_SHARE:.0%} of total "
+        "spend; replace with the stakeholder's real diversification rule."
+    )
+    wb.add_assumption(
+        f"GUESSED: capped holdings at {MAX_UNITS_PER_ASSET:g} units per listed "
+        "stone; replace with the actual purchase limit or case capacity."
+    )
+    wb.add_assumption(
+        f"GUESSED: modelled a stratified sample of {SAMPLE_SIZE} stones rather "
+        "than all 53,940; the full registry is a market listing, not a purchase menu."
+    )
+    wb.add_assumption(
+        "GUESSED: holdings are continuous, so a fractional quantity means 'buy "
+        "roughly this much of this grade', not a fraction of one stone."
     )
 
     # Stratified: an even spread across cut grades, so the diversification
@@ -231,38 +243,62 @@ def main() -> int:
     )
 
     spend = float(held["spend"].sum())
+    limit_check = log.to_frame().assign(
+        status=lambda d: d["satisfied"].map({True: "Met", False: "Missed"}).fillna(
+            "Not checked"
+        ),
+        room_left=lambda d: d["slack"].map(lambda v: "" if pd.isna(v) else round(float(v), 2)),
+    )[["business_rule", "bound", "achieved", "room_left", "status"]].rename(
+        columns={
+            "business_rule": "Rule",
+            "bound": "Limit",
+            "achieved": "Actual",
+            "room_left": "Room left",
+            "status": "Status",
+        }
+    )
+    guesses = [a for a in wb.assumptions() if not a.startswith("CONFIRMED:")]
     report = "\n".join(
         [
             "# Vault stocking recommendation",
             "",
             "## Recommendation",
             "",
-            f"Deploy **{spend:,.0f}** of the {CREDIT_LINE:,.0f} credit line across "
+            f"Using the demo assumptions listed below, deploy **{spend:,.0f} "
+            f"currency units** of the {CREDIT_LINE:,.0f} credit line across "
             f"**{len(held)} stones** to acquire **{objective:,.2f} carats**.",
             "",
             "## What this achieves",
             "",
             f"- Total mass acquired: **{objective:,.2f} carats**",
-            f"- Capital deployed: **{spend:,.0f}** ({spend / CREDIT_LINE:.0%} of the line)",
-            f"- Effective cost: **{spend / objective:,.0f} per carat**",
+            f"- Capital deployed: **{spend:,.0f} currency units** "
+            f"({spend / CREDIT_LINE:.0%} of the line)",
+            f"- Effective cost: **{spend / objective:,.0f} currency units per carat**",
             "",
             "## The decision",
             "",
             md_table(by_grade),
             "",
-            "## Why this mix",
+            "## Why these and not others",
             "",
             f"The {MAX_CATEGORY_SHARE:.0%} cap per cut grade is what forces "
-            "diversification; without it the optimiser would concentrate "
+            "diversification; without it the calculation would concentrate "
             "entirely in whichever grade offers the best carats-per-currency.",
             "",
-            "## Constraint check",
+            "## What would change the answer",
             "",
-            md_table(
-                log.to_frame()[
-                    ["business_rule", "sense", "bound", "achieved", "slack", "binding"]
-                ].rename(columns={"business_rule": "Rule"})
-            ),
+            "The levers are the credit line, the case or purchase limit per "
+            "stone, and the diversification cap by cut grade. Moving those "
+            "limits changes how much mass can be stocked and how concentrated "
+            "the vault becomes.",
+            "",
+            "## How the limits checked out",
+            "",
+            md_table(limit_check),
+            "",
+            "## What I had to guess",
+            "",
+            *([f"- {a}" for a in guesses] or ["- None. The stakeholder confirmed every input."]),
             "",
             "## Assumptions",
             "",

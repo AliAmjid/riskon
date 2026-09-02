@@ -12,8 +12,8 @@ CONSTRAINTS
     3. A task's passenger count must fit the driver's vehicle capacity.
 
 ASSUMPTIONS
-    The driver pool is not in the data. Its size and capacities are invented
-    and recorded in the ledger.
+    The driver pool is not in the data. Demo driver count, vehicle capacity and
+    shift window are recorded as GUESSED and surfaced in the report.
 
 ----------------------------------------------------------------------------
 This is a TEMPLATE. It runs as-is against data/taxis.csv. Edit CONFIG and the
@@ -60,12 +60,20 @@ def build_candidates(wb) -> pd.DataFrame:
         wb.load(DEFAULT_SOURCE)
 
     wb.add_assumption(
-        f"The data has no driver roster; assumed {N_DRIVERS} interchangeable "
-        f"drivers each seating {VEHICLE_CAPACITY} passengers."
+        f"GUESSED: the data has no driver roster; assumed {N_DRIVERS} "
+        f"interchangeable drivers."
     )
     wb.add_assumption(
-        f"Modelled a single shift from {SHIFT_START} to {SHIFT_END}; the full "
-        f"log spans months and is not one dispatch decision."
+        f"GUESSED: each driver has a {VEHICLE_CAPACITY}-passenger vehicle; "
+        "replace with the actual vehicle capacities before using operationally."
+    )
+    wb.add_assumption(
+        f"GUESSED: modelled a single shift from {SHIFT_START} to {SHIFT_END}; "
+        "the full log spans months and is not one dispatch decision."
+    )
+    wb.add_assumption(
+        f"GUESSED: limited the demo to the first {MAX_TASKS} qualifying "
+        "requests in the shift window to keep the overlap check small."
     )
 
     return wb.materialize(
@@ -233,21 +241,35 @@ def write_report(wb, solution: pd.DataFrame, assigned: pd.DataFrame, log: Constr
         .rename(columns={"driver": "Driver", "trips": "Trips", "revenue": "Revenue"})
     )
     unserved = int((solution["selected"] == 0).sum())
+    limit_check = log.to_frame().assign(
+        status=lambda d: d["satisfied"].map({True: "Met", False: "Missed"}).fillna(
+            "Not checked"
+        )
+    )[["business_rule", "bound", "achieved", "status"]].rename(
+        columns={
+            "business_rule": "Rule",
+            "bound": "Limit",
+            "achieved": "Actual",
+            "status": "Status",
+        }
+    )
+    guesses = [a for a in wb.assumptions() if not a.startswith("CONFIRMED:")]
 
     lines = [
         "# Dispatch assignment recommendation",
         "",
         "## Recommendation",
         "",
-        f"Assign **{len(assigned)} of {len(solution)} requests** across "
+        f"Using the demo driver assumptions listed below, assign "
+        f"**{len(assigned)} of {len(solution)} requests** across "
         f"{assigned['driver'].nunique()} drivers, capturing "
-        f"**{objective:,.2f} in revenue** for the shift.",
+        f"**{objective:,.2f} currency units in revenue** for the shift.",
         "",
         "## What this achieves",
         "",
         f"- Requests served: **{len(assigned)}** of {len(solution)}",
         f"- Requests left unserved: **{unserved}**",
-        f"- Revenue captured: **{objective:,.2f}**",
+        f"- Revenue captured: **{objective:,.2f} currency units**",
         "",
         "## The decision",
         "",
@@ -259,12 +281,22 @@ def write_report(wb, solution: pd.DataFrame, assigned: pd.DataFrame, log: Constr
         "the limit is fleet size rather than demand - each additional driver "
         "unlocks the requests that currently overlap an existing trip.",
         "",
-        "## Constraint check",
+        "## What would change the answer",
         "",
-        md_table(
-            log.to_frame()[["business_rule", "sense", "bound", "achieved", "satisfied"]]
-            .rename(columns={"business_rule": "Rule"})
-        ),
+        "The main levers are the number of available drivers, vehicle capacity "
+        "and the shift window. More drivers or larger vehicles can turn some "
+        "unserved requests into revenue; changing a setting that already has "
+        "room left will not move the recommendation much.",
+        "",
+        "## How the limits checked out",
+        "",
+        md_table(limit_check),
+        "",
+        "## What I had to guess",
+        "",
+    ]
+    lines += [f"- {a}" for a in guesses] or ["- None. The stakeholder confirmed every input."]
+    lines += [
         "",
         "## Assumptions",
         "",

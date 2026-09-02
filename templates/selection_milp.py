@@ -13,8 +13,8 @@ CONSTRAINTS
     4. Buy at most MAX_ITEMS vehicles.
 
 ASSUMPTIONS
-    The catalogue has no price column, so unit cost is derived from weight.
-    Recorded in the ledger and surfaced in the report.
+    This demo has no stakeholder answers, so every demo number is recorded as
+    GUESSED in the ledger and surfaced in the report.
 
 ----------------------------------------------------------------------------
 This is a TEMPLATE. It runs as-is against data/mpg.csv so you can see the whole
@@ -61,11 +61,28 @@ def build_candidates(wb) -> pd.DataFrame:
         wb.load(DEFAULT_SOURCE)
 
     wb.add_assumption(
-        f"The catalogue has no price column; unit cost is modelled as "
-        f"weight * {COST_PER_KG:g} currency units."
+        f"GUESSED: capital budget set to {BUDGET:,.0f} currency units for the "
+        "demo; replace with the stakeholder's approved purchasing budget."
     )
     wb.add_assumption(
-        f"Rows with a missing {VALUE_COLUMN} are excluded as unpurchasable."
+        f"GUESSED: fleet size capped at {MAX_ITEMS} vehicles for the demo; "
+        "replace with the number of vehicles the business actually needs."
+    )
+    wb.add_assumption(
+        f"GUESSED: target fleet efficiency set to {MIN_AVG_MPG:g} miles per "
+        "gallon; replace with the company's actual sustainability target."
+    )
+    wb.add_assumption(
+        f"GUESSED: no origin may exceed {MAX_ORIGIN_SHARE:.0%} of the fleet; "
+        "replace with the company's real supplier diversification rule."
+    )
+    wb.add_assumption(
+        f"GUESSED: the catalogue has no price column, so unit cost is modelled "
+        f"as weight * {COST_PER_KG:g} currency units."
+    )
+    wb.add_assumption(
+        f"GUESSED: rows with a missing {VALUE_COLUMN} are excluded as "
+        "unpurchasable."
     )
 
     return wb.materialize(
@@ -236,7 +253,22 @@ def verify(wb, solution: pd.DataFrame, log: ConstraintLog) -> pd.DataFrame:
 
 def write_report(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float) -> str:
     constraints = log.to_frame()
-    binding = constraints.loc[constraints["binding"].fillna(False).astype(bool)]
+    tight_limits = constraints.loc[constraints["binding"].fillna(False).astype(bool)]
+    limit_check = constraints.assign(
+        status=lambda d: d["satisfied"].map({True: "Met", False: "Missed"}).fillna(
+            "Not checked"
+        ),
+        room_left=lambda d: d["slack"].map(lambda v: "" if pd.isna(v) else round(float(v), 2)),
+    )[["business_rule", "bound", "achieved", "room_left", "status"]].rename(
+        columns={
+            "business_rule": "Rule",
+            "bound": "Limit",
+            "achieved": "Actual",
+            "room_left": "Room left",
+            "status": "Status",
+        }
+    )
+    guesses = [a for a in wb.assumptions() if not a.startswith("CONFIRMED:")]
 
     table = chosen.assign(
         unit_cost=lambda d: d["unit_cost"].round(0),
@@ -257,14 +289,15 @@ def write_report(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float)
         "",
         "## Recommendation",
         "",
-        f"Buy the **{len(chosen)} vehicles** listed below for a total of "
-        f"**{spend:,.0f}**, delivering **{objective:,.0f} cumulative horsepower** "
-        f"at a fleet average of **{chosen['mpg'].mean():.1f} mpg**.",
+        f"Using the demo inputs labelled under assumptions, buy the "
+        f"**{len(chosen)} vehicles** listed below for a total of "
+        f"**{spend:,.0f} currency units**, delivering **{objective:,.0f} "
+        f"cumulative horsepower** at a fleet average of **{chosen['mpg'].mean():.1f} mpg**.",
         "",
         "## What this achieves",
         "",
         f"- Cumulative engine power: **{objective:,.0f} hp**",
-        f"- Capital deployed: **{spend:,.0f}** of {BUDGET:,.0f} "
+        f"- Capital deployed: **{spend:,.0f} currency units** of {BUDGET:,.0f} "
         f"({spend / BUDGET:.0%} of budget)",
         f"- Fleet average efficiency: **{chosen['mpg'].mean():.1f} mpg** "
         f"against a {MIN_AVG_MPG:g} mpg target",
@@ -277,29 +310,31 @@ def write_report(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float)
         "",
     ]
 
-    if len(binding):
-        lines.append("These constraints are binding - they are what stops a better answer:")
+    if len(tight_limits):
+        lines.append("These are the limits that stop a higher-power fleet:")
         lines.append("")
-        for row in binding.itertuples():
+        for row in tight_limits.itertuples():
             lines.append(f"- **{row.business_rule}** (at {row.achieved:,.2f})")
     else:
-        lines.append("No constraint is tight; the objective is limited by the catalogue itself.")
+        lines.append("No business limit is tight; the catalogue itself limits the answer.")
 
     lines += [
         "",
         "## What would change the answer",
         "",
-        "The binding constraints above are the levers. Relaxing one of them is "
-        "the only way to a higher-power fleet; relaxing anything else changes "
-        "nothing.",
+        "The full limits above are the levers. Raising one of them is the path "
+        "to a higher-power fleet; changing a limit with room left is unlikely "
+        "to matter.",
         "",
-        "## Constraint check",
+        "## How the limits checked out",
         "",
-        md_table(
-            constraints[
-                ["business_rule", "sense", "bound", "achieved", "slack", "binding", "satisfied"]
-            ].rename(columns={"business_rule": "Rule"})
-        ),
+        md_table(limit_check),
+        "",
+        "## What I had to guess",
+        "",
+    ]
+    lines += [f"- {a}" for a in guesses] or ["- None. The stakeholder confirmed every input."]
+    lines += [
         "",
         "## Assumptions",
         "",
@@ -310,7 +345,7 @@ def write_report(wb, chosen: pd.DataFrame, log: ConstraintLog, objective: float)
         "## How to check this",
         "",
         "```bash",
-        "riskon sql \"SELECT * FROM constraints\"",
+        "riskon sql \"SELECT business_rule, bound, achieved, satisfied FROM constraints\"",
         "riskon sql \"SELECT * FROM solution WHERE selected = 1\"",
         "```",
     ]
